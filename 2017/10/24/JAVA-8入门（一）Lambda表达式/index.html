@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.2.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.1/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"xilidou.com","root":"/","images":"/images","scheme":"Pisces","version":"8.0.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="机房迁移以后终于可以用上 Java 8了，本教程将会分为三个方面介绍Java 8 的新特性。首先给大家介绍 Java 8 的Lambda 表达式。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JAVA 8入门（一）Lambda表达式">
+<meta property="og:url" content="https://xilidou.com/2017/10/24/JAVA-8%E5%85%A5%E9%97%A8%EF%BC%88%E4%B8%80%EF%BC%89Lambda%E8%A1%A8%E8%BE%BE%E5%BC%8F/index.html">
+<meta property="og:site_name" content="犀利豆的博客">
+<meta property="og:description" content="机房迁移以后终于可以用上 Java 8了，本教程将会分为三个方面介绍Java 8 的新特性。首先给大家介绍 Java 8 的Lambda 表达式。">
+<meta property="og:locale">
+<meta property="article:published_time" content="2017-10-24T11:09:08.000Z">
+<meta property="article:modified_time" content="2020-10-19T05:01:19.000Z">
+<meta property="article:author" content="Zhengxin Diao">
+<meta property="article:tag" content="java">
+<meta property="article:tag" content="Java 8">
+<meta property="article:tag" content="Lambda">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://xilidou.com/2017/10/24/JAVA-8%E5%85%A5%E9%97%A8%EF%BC%88%E4%B8%80%EF%BC%89Lambda%E8%A1%A8%E8%BE%BE%E5%BC%8F/">
+
+
+<script data-pjax class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh'
+  };
+</script>
+
+  <title>JAVA 8入门（一）Lambda表达式 | 犀利豆的博客</title>
+  
+
+
+  <script data-pjax>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?5d32532da741f4430197fd778ea752f1";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  <script data-pjax>
+    !function(e,t,n,g,i){e[i]=e[i]||function(){(e[i].q=e[i].q||[]).push(arguments)},n=t.createElement("script"),tag=t.getElementsByTagName("script")[0],n.async=1,n.src=('https:'==document.location.protocol?'https://':'http://')+g,tag.parentNode.insertBefore(n,tag)}(window,document,"script","assets.growingio.com/2.1/gio.js","gio");
+    gio('init', 'UA-35317601-2', {});
+    gio('send');
+  </script>
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">犀利豆的博客</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">高质量的技术博客</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-java">
+
+    <a href="/tags/java/" rel="section"><i class="fa fa-th fa-fw"></i>java</a>
+
+  </li>
+        <li class="menu-item menu-item-redis">
+
+    <a href="/tags/redis/" rel="section"><i class="fa fa-th fa-fw"></i>redis</a>
+
+  </li>
+        <li class="menu-item menu-item-dubbo">
+
+    <a href="/tags/dubbo/" rel="section"><i class="fa fa-th fa-fw"></i>dubbo</a>
+
+  </li>
+        <li class="menu-item menu-item-tools">
+
+    <a href="/tags/tools" rel="section"><i class="fa fa-th fa-fw"></i>tools</a>
+
+  </li>
+        <li class="menu-item menu-item-我的朋友们">
+
+    <a href="/friends" rel="section"><i class="fa fa-user fa-fw"></i>我的朋友们</a>
+
+  </li>
+        <li class="menu-item menu-item-关于我">
+
+    <a href="/aboutme" rel="section"><i class="fa fa-user fa-fw"></i>关于我</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <section class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E8%AE%A9%E4%BB%A3%E7%A0%81%E6%9B%B4%E7%81%B5%E6%B4%BB"><span class="nav-number">1.</span> <span class="nav-text">1. 让代码更灵活</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E5%AE%9E%E9%99%85%E5%BA%94%E7%94%A8%EF%BC%9A"><span class="nav-number">2.</span> <span class="nav-text">2. 实际应用：</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E8%BF%91%E8%B7%9D%E7%A6%BB%E8%A7%82%E5%AF%9FLambda"><span class="nav-number">3.</span> <span class="nav-text">3. 近距离观察Lambda</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E4%BB%80%E4%B9%88%E6%98%AFLambda"><span class="nav-number">3.1.</span> <span class="nav-text">1. 什么是Lambda</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E4%BB%80%E4%B9%88%E6%97%B6%E5%80%99%E4%BD%BF%E7%94%A8Lambda"><span class="nav-number">3.2.</span> <span class="nav-text">2. 什么时候使用Lambda</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-Lambda%E7%9A%84%E7%B1%BB%E5%9E%8B%E6%8E%A8%E6%96%AD"><span class="nav-number">3.3.</span> <span class="nav-text">3. Lambda的类型推断</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#5-%E7%8E%B0%E6%88%90%E7%9A%84%E5%87%BD%E6%95%B0%E5%BC%8F%E6%8E%A5%E5%8F%A3"><span class="nav-number">3.3.1.</span> <span class="nav-text">5.现成的函数式接口</span></a></li></ol></li></ol></li></ol></div>
+        </section>
+        <!--/noindex-->
+
+        <section class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Zhengxin Diao</p>
+  <div class="site-description" itemprop="description">北邮本科，University of Leicester EE 研究生，Java后端开发，目前就职阿里</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">41</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">73</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/diaozxin007" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;diaozxin007" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:diaozxin@163.com" title="E-Mail → mailto:diaozxin@163.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/diao-zheng-xin/activities" title="zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;diao-zheng-xin&#x2F;activities" rel="noopener" target="_blank"><i class="zhihu fa-fw"></i>zhihu</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml"><i class="rs fa-fw"></i>RSS</a>
+      </span>
+  </div>
+
+
+
+        </section>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://xilidou.com/2017/10/24/JAVA-8%E5%85%A5%E9%97%A8%EF%BC%88%E4%B8%80%EF%BC%89Lambda%E8%A1%A8%E8%BE%BE%E5%BC%8F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Zhengxin Diao">
+      <meta itemprop="description" content="北邮本科，University of Leicester EE 研究生，Java后端开发，目前就职阿里">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="犀利豆的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          JAVA 8入门（一）Lambda表达式
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2017-10-24 19:09:08" itemprop="dateCreated datePublished" datetime="2017-10-24T19:09:08+08:00">2017-10-24</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">Edited on</span>
+        <time title="Modified: 2020-10-19 13:01:19" itemprop="dateModified" datetime="2020-10-19T13:01:19+08:00">2020-10-19</time>
+      </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2017/10/24/JAVA-8%E5%85%A5%E9%97%A8%EF%BC%88%E4%B8%80%EF%BC%89Lambda%E8%A1%A8%E8%BE%BE%E5%BC%8F/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2017/10/24/JAVA-8%E5%85%A5%E9%97%A8%EF%BC%88%E4%B8%80%EF%BC%89Lambda%E8%A1%A8%E8%BE%BE%E5%BC%8F/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>机房迁移以后终于可以用上 <code>Java 8</code>了，本教程将会分为三个方面介绍<code>Java 8</code> 的新特性。首先给大家介绍 <code>Java 8</code> 的Lambda 表达式。</p>
+<a id="more"></a>
+
+<h2 id="1-让代码更灵活"><a href="#1-让代码更灵活" class="headerlink" title="1. 让代码更灵活"></a>1. 让代码更灵活</h2><p>作为程序员，每天除了写代码，最重要的事情就是吃饭了，为了吃饭，我们设计了一个Dish 对象，代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Dish</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> String name;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">boolean</span> vegetarian;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">int</span> calories;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> Type type;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="class"><span class="keyword">enum</span> <span class="title">Type</span> </span>&#123;MEAT,FISH,OTHER&#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">//省略get set方法</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>作为一个减肥人士，寻求医生建议。医生说，低卡路里饮食，比较健康，为了找出卡路里低于1000的菜品。于是就有了一下代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> List&lt;Dish&gt; <span class="title">filterDish</span><span class="params">(List&lt;Dish&gt; dishes)</span></span>&#123;</span><br><span class="line">    List&lt;Dish&gt; healthDishes = <span class="keyword">new</span> ArraryList&lt;&gt;();</span><br><span class="line">    <span class="keyword">for</span>(Dish dish: dishes)&#123;</span><br><span class="line">        <span class="keyword">if</span>(dish.getCalories()&lt;<span class="number">1000</span>)&#123;</span><br><span class="line">            healthDishes.add(dish)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>后来医生说，不只卡路里要低，而且肉就不要吃了，吃素比较有利于健康，于是含泪写了以下代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> List&lt;Dish&gt; <span class="title">filterDish</span><span class="params">(List&lt;Dish&gt; dishes)</span></span>&#123;</span><br><span class="line">    List&lt;Dish&gt; healthDishes = <span class="keyword">new</span> ArraryList&lt;&gt;();</span><br><span class="line">    <span class="keyword">for</span>(Dish dish: dishes)&#123;</span><br><span class="line">        <span class="keyword">if</span>(dish.getCalories()&lt;<span class="number">1000</span> &amp;&amp; dish.getVegerarian())&#123;</span><br><span class="line">            healthDishes.add(dish)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>不能吃肉哪憋得住，于是医生又说你可以吃一点鱼。最为一个有骨气的程序员，已经不想去迎合<del>（产品经理了）</del>医生去修改代码了？有没有什么办法，能快速找出健康食物，万一哪天减肥成功了，又能吃肉了也不用去修改代码？<br>于是我们写这样一段代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> List&lt;Dish&gt; <span class="title">filterDish</span><span class="params">(List&lt;Dish&gt; dishes,<span class="keyword">int</span> calorites,<span class="keyword">boolean</span> isMeat,Type type)</span></span>&#123;</span><br><span class="line">    List&lt;Dish&gt; healthDishes = <span class="keyword">new</span> ArraryList&lt;&gt;();</span><br><span class="line">    <span class="keyword">for</span>(Dish dish: dishes)&#123;</span><br><span class="line">        <span class="keyword">if</span>(dish.getCalories()&lt;calorites </span><br><span class="line">            &amp;&amp; dish.getVegerarian() == isMeat</span><br><span class="line">            &amp;&amp; dish.getType() == type )&#123;</span><br><span class="line">            healthDishes.add(dish)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>需求是满足了，但是作为一个有品位的程序员肯定不允许这样代码出现，实在过于繁琐了。万一再加入一个条件怎么办？<br>我们可以考虑将医生的医嘱作为一个方法传入我们的filerDish这个方法，医生说啥就是啥，不必要自己封装一个方法来响应医生的要求？于是我们这么考虑:</p>
+<p>首先规定一个接口叫”医生说”：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">DoctorSaid</span></span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">test</span><span class="params">(Dish dish)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们挑选菜品的时候这样写：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> List&lt;Dish&gt; <span class="title">filterDish</span><span class="params">(Dish dishes,DoctorSaid doctorSaid)</span></span>&#123;</span><br><span class="line">    List&lt;Dish&gt; lowCaloriesDishes = <span class="keyword">new</span> ArraryList&lt;&gt;();</span><br><span class="line">    <span class="keyword">for</span>(Dish dish: dishe)&#123;</span><br><span class="line">        <span class="keyword">if</span>(doctorSaid.test(dish) )&#123;</span><br><span class="line">            healthDishes.add(dish)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果医生说吃 1000 卡路里一下的食物，我们实现一个1000 以下卡路里的食物：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">boolean</span> DoctorSaidLowCalorites implements DoctorSaid&#123;</span><br><span class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">test</span><span class="params">(Dish dish)</span></span>&#123;</span><br><span class="line">        <span class="keyword">return</span> dish.getCalorites() &lt; <span class="number">1000</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这样我们只用这样调用filterDish就解决问题了：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">List&lt;Dish&gt; dishes = filterDish(dishes,<span class="keyword">new</span> DoctorSaidLowCalorites());</span><br></pre></td></tr></table></figure>
+
+<p>问题来了，对于善变的<del>（产品经理）</del> 医生，总是不能提前准备好所有的接口实现？<br>这个时候我们就可以使用<code>JAVA</code>的匿名了内部类来使用这个挑选菜品的方法更加灵活。于是我们就有这样的代码了</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">List&lt;Dish&gt; dishes = filterDish(dishes,<span class="keyword">new</span> DoctorSaid()&#123;</span><br><span class="line">    <span class="keyword">return</span> dish.getCalorites() &lt; <span class="number">1000</span>;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<p>稍微好了一点，但是匿名内部类还是有一个不好的地方，就是太啰嗦了其实核心代码就是<code>dish.getCalorites() &lt; 1000</code> 为什么我们要写那么多代码？这个也是java老被诟病的地方,代码十分繁琐。<br>终于我们的Lambda表达式要出场了：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">List&lt;Dish&gt; dishes = filterDish(dishes, (Dish dish)-&gt; dish.getCalorites() &lt; <span class="number">1000</span>);</span><br></pre></td></tr></table></figure>
+
+<p>现在看上去好多了，但是作为一个程序员还是很贪心啊，现在只能过滤 <code>Dish</code> 能不能再抽象一点呢？当然啊，看这个：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Predicate</span>&lt;<span class="title">T</span>&gt;</span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">test</span><span class="params">(T t)</span></span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> &lt;T&gt; <span class="function">List&lt;T&gt; <span class="title">filter</span><span class="params">(List&lt;T&gt; list, Predicate&lt;T&gt; p)</span></span>&#123;</span><br><span class="line">    List&lt;T&gt; result = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">    <span class="keyword">for</span>(T e: list)&#123;</span><br><span class="line">        <span class="keyword">if</span>(p.test(e))&#123;</span><br><span class="line">            result.add(e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>使用泛型让我们的代码更加通用。随便产品经理改需求，从 List 里面按规则过滤符合要求的需求不用多写代码都能搞定了。这时候你是不是觉得胸前的红领巾更加鲜艳了？</p>
+<h2 id="2-实际应用："><a href="#2-实际应用：" class="headerlink" title="2. 实际应用："></a>2. 实际应用：</h2><p>作为一个招聘网站的程序员，一定有很多将职位列表排序的需求，比如按照更新时间将职位列表排序我们可以这么写：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">jobList.sort((JobInfo job1,JobInfo job2)-&gt;job1.getUpdateTime.compareTo(job2.getUpdateTime);</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>或者作为高端程序员的多线程可以这样写：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Thread t = <span class="keyword">new</span> Thread(()-&gt; System.out.println(<span class="string">&quot;Hello world&quot;</span>));</span><br></pre></td></tr></table></figure>
+
+<h2 id="3-近距离观察Lambda"><a href="#3-近距离观察Lambda" class="headerlink" title="3. 近距离观察Lambda"></a>3. 近距离观察Lambda</h2><h3 id="1-什么是Lambda"><a href="#1-什么是Lambda" class="headerlink" title="1. 什么是Lambda"></a>1. 什么是Lambda</h3><p>所以通过上面例子我们尝试定义一下Lambda 表达式是什么？</p>
+<p>Lambda表达式为简洁的表示可传递的匿名函数的表达式的一种方式。分开来说： </p>
+<ul>
+<li>匿名：没有必要给他取一个函数名称。</li>
+<li>简洁：相对于匿名内部内不需要写很多模板代码</li>
+<li>传递：可以做为参数传递给方法</li>
+<li>函数：不属特定类。但是和方法一样，有参数，函数主题，返回值，有时候还能抛异常。</li>
+</ul>
+<p>标准的Lambda表达式:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">(Dish dish) -&gt; dish.getCalories() &gt; 1000;</span><br></pre></td></tr></table></figure>
+
+<p>从上面的标准的表达式：一共三个部分组成<br>    * 参数：<br>    * 箭头：<br>    * Lamdba主体：也就是函数的主体</p>
+<h3 id="2-什么时候使用Lambda"><a href="#2-什么时候使用Lambda" class="headerlink" title="2. 什么时候使用Lambda"></a>2. 什么时候使用Lambda</h3><ul>
+<li>函数式接口：</li>
+</ul>
+<p>所谓函数式接口，我们可以理解为就是只有一个方法的接口。</p>
+<ul>
+<li>函数描述符：</li>
+</ul>
+<p>函数式接口的签名基本上就是Lambda表达式的签名。我们降这种抽象方法叫做函数描述符。举个例子，Ruannable 方法就可以看做一个什么都不接受，什么都不返回的函数。这个时候我们可以发现传入的 Lambda 函数为 <code>()-&gt;void</code>.</p>
+<h3 id="3-Lambda的类型推断"><a href="#3-Lambda的类型推断" class="headerlink" title="3. Lambda的类型推断"></a>3. Lambda的类型推断</h3><p>Java编译器会根据上下文推断使用什么函数式接口来配合Lambda表达式，比如我们之前的例子，以下两种写法都是正确的：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">(Dish dish) -&gt; dish.getCalories() &gt; <span class="number">1000</span>;</span><br><span class="line"></span><br><span class="line">dish -&gt; dish.getCalories() &gt; <span class="number">1000</span>;</span><br><span class="line">``` </span><br><span class="line"></span><br><span class="line">第二个语句并没有显式的制定```dish```的类型是```Dish```，编译器也能正确的编译代码。</span><br><span class="line"></span><br><span class="line">### 4.方法的引用</span><br><span class="line"></span><br><span class="line">在Lambda中我们可以利用方法的引用来重复使用。可以认为是一个Lamdba带来的语法糖🍬。</span><br><span class="line"></span><br><span class="line">对于之前我们为职位排序的例子：</span><br><span class="line"></span><br><span class="line">```java</span><br><span class="line">jobList.sort((JobInfo job1,JobInfo job2)-&gt;job1.getUpdateTime.compareTo(job2.getUpdateTime);</span><br></pre></td></tr></table></figure>
+
+<p>我们可以改写为</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">jobList.sort(comparing(JobInfo::getUpdateTime));</span><br></pre></td></tr></table></figure>
+
+<p>反正我第一次看到这种写法也不禁感叹，这也行？还有这种操作？</p>
+<p>我们就来看看 JDK 8 中对于方法的引用有以下四种类型：</p>
+<ul>
+<li><p>static 静态方法的引用，这个没啥好说的，语法就是 <code>(ClassName:staticMethod)</code>。</p>
+</li>
+<li><p>任意类型的实例方法的引用，比如 String 方法的 length 方法：</p>
+</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">(String s1) -&gt; s1.length()</span><br><span class="line"></span><br><span class="line">(String::length)</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>现有对象的实例方法的引用：</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">()-&gt; s.length()</span><br><span class="line"></span><br><span class="line">(s::length)</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>构造函数的引用：直接上代码也很好理解<code>(Dish::new)</code>。</li>
+</ul>
+<h4 id="5-现成的函数式接口"><a href="#5-现成的函数式接口" class="headerlink" title="5.现成的函数式接口"></a>5.现成的函数式接口</h4><p>JDK 8 中已经包含了若干现成的函数式接口。在<code>java.util.function</code>中。包括<code>Predicate&lt;T&gt;</code>，<code>Function&lt;T,R&gt;</code>，<code>Consumer&lt;T&gt;</code>。大家可以直接查看源码，在这里就不讲解了。</p>
+<p>第一部分教程结束了，请大家期待《JAVA 8入门（二） 数据流的操作》</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/java/" rel="tag"># java</a>
+              <a href="/tags/Java-8/" rel="tag"># Java 8</a>
+              <a href="/tags/Lambda/" rel="tag"># Lambda</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2017/10/24/%E6%9C%89%E9%81%93-Alfred-Workflow-%E5%A8%81%E5%8A%9B%E5%8A%A0%E5%BC%BA%E7%89%88/" rel="prev" title="有道 Alfred Workflow 威力加强版">
+                  <i class="fa fa-chevron-left"></i> 有道 Alfred Workflow 威力加强版
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2017/10/24/JAVA-8%E5%85%A5%E9%97%A8%EF%BC%88%E4%BA%8C%EF%BC%89%E6%B5%81/" rel="next" title="JAVA 8入门（二）流">
+                  JAVA 8入门（二）流 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+      
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="noopener" target="_blank">京ICP备17065467号-1 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Zhengxin Diao</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/@next-theme/pjax@0.4.0/pjax.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+  <script>
+var pjax = new Pjax({
+  selectors: [
+    'head title',
+    '.page-configurations',
+    '.main-inner',
+    '.post-toc-wrap',
+    '.languages',
+    '.pjax'
+  ],
+  analytics: false,
+  cacheBust: false,
+  scrollRestoration: false,
+  scrollTo: !CONFIG.bookmark.enable
+});
+
+document.addEventListener('pjax:success', () => {
+  pjax.executeScripts(document.querySelectorAll('script[data-pjax], .pjax script'));
+  NexT.boot.refresh();
+  // Define Motion Sequence & Bootstrap Motion.
+  if (CONFIG.motion.enable) {
+    NexT.motion.integrator
+      .init()
+      .add(NexT.motion.middleWares.subMenu)
+      .add(NexT.motion.middleWares.postList)
+      .bootstrap();
+  }
+  const hasTOC = document.querySelector('.post-toc');
+  document.querySelector('.sidebar-inner').classList.toggle('sidebar-nav-active', hasTOC);
+  document.querySelector(hasTOC ? '.sidebar-nav-toc' : '.sidebar-nav-overview').click();
+  NexT.utils.updateSidebarPosition();
+});
+</script>
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+
+
+
+    <div class="pjax">
+  
+
+  
+
+<script>
+NexT.utils.loadComments('#valine-comments', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/valine@1.4.14/dist/Valine.min.js', () => {
+    new Valine(Object.assign({"enable":true,"appId":"U1CnWFNMjPMQtQ26DeVu6kXh-gzGzoHsz","appKey":"8YqgRu5iJFBdqRSe945Bu9le# Your leancloud application appkey","serverURLs":null,"placeholder":"做了一点微小的工作","avatar":"mm","meta":["nick","mail","link"],"pageSize":10,"lang":null,"visitor":false,"comment_count":true,"recordIP":false,"enableQQ":false,"requiredFields":[]}, {
+      el: '#valine-comments',
+      path: "/2017/10/24/JAVA-8%E5%85%A5%E9%97%A8%EF%BC%88%E4%B8%80%EF%BC%89Lambda%E8%A1%A8%E8%BE%BE%E5%BC%8F/",
+      serverURLs: "https://u1cnwfnm.api.lncldglobal.com"
+    }));
+  }, window.Valine);
+});
+</script>
+
+    </div>
+</body>
+</html>

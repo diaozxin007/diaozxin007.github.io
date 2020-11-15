@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.2.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.1/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"xilidou.com","root":"/","images":"/images","scheme":"Pisces","version":"8.0.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="原文地址：https:&#x2F;&#x2F;www.xilidou.com&#x2F;2018&#x2F;02&#x2F;01&#x2F;java-cas&#x2F; CAS 是现代操作系统，解决并发问题的一个重要手段，最近在看 eureka 的源码的时候。遇到了很多 CAS 的操作。今天就系统的回顾一下 Java 中的CAS。 阅读这篇文章你将会了解到：  什么是 CAS CAS 实现原理是什么？ CAS 在现实中的应用 自旋锁 原子类型 限流器   CAS 的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JAVA 中的 CAS">
+<meta property="og:url" content="https://xilidou.com/2018/02/01/java-cas/index.html">
+<meta property="og:site_name" content="犀利豆的博客">
+<meta property="og:description" content="原文地址：https:&#x2F;&#x2F;www.xilidou.com&#x2F;2018&#x2F;02&#x2F;01&#x2F;java-cas&#x2F; CAS 是现代操作系统，解决并发问题的一个重要手段，最近在看 eureka 的源码的时候。遇到了很多 CAS 的操作。今天就系统的回顾一下 Java 中的CAS。 阅读这篇文章你将会了解到：  什么是 CAS CAS 实现原理是什么？ CAS 在现实中的应用 自旋锁 原子类型 限流器   CAS 的">
+<meta property="og:locale">
+<meta property="og:image" content="https://img.xilidou.com/img/2019-04-25-022207.jpg">
+<meta property="article:published_time" content="2018-02-01T05:56:06.000Z">
+<meta property="article:modified_time" content="2020-10-19T05:01:19.000Z">
+<meta property="article:author" content="Zhengxin Diao">
+<meta property="article:tag" content="java">
+<meta property="article:tag" content="锁">
+<meta property="article:tag" content="cas">
+<meta property="article:tag" content="高并发">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://img.xilidou.com/img/2019-04-25-022207.jpg">
+
+
+<link rel="canonical" href="https://xilidou.com/2018/02/01/java-cas/">
+
+
+<script data-pjax class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh'
+  };
+</script>
+
+  <title>JAVA 中的 CAS | 犀利豆的博客</title>
+  
+
+
+  <script data-pjax>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?5d32532da741f4430197fd778ea752f1";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  <script data-pjax>
+    !function(e,t,n,g,i){e[i]=e[i]||function(){(e[i].q=e[i].q||[]).push(arguments)},n=t.createElement("script"),tag=t.getElementsByTagName("script")[0],n.async=1,n.src=('https:'==document.location.protocol?'https://':'http://')+g,tag.parentNode.insertBefore(n,tag)}(window,document,"script","assets.growingio.com/2.1/gio.js","gio");
+    gio('init', 'UA-35317601-2', {});
+    gio('send');
+  </script>
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">犀利豆的博客</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">高质量的技术博客</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-java">
+
+    <a href="/tags/java/" rel="section"><i class="fa fa-th fa-fw"></i>java</a>
+
+  </li>
+        <li class="menu-item menu-item-redis">
+
+    <a href="/tags/redis/" rel="section"><i class="fa fa-th fa-fw"></i>redis</a>
+
+  </li>
+        <li class="menu-item menu-item-dubbo">
+
+    <a href="/tags/dubbo/" rel="section"><i class="fa fa-th fa-fw"></i>dubbo</a>
+
+  </li>
+        <li class="menu-item menu-item-tools">
+
+    <a href="/tags/tools" rel="section"><i class="fa fa-th fa-fw"></i>tools</a>
+
+  </li>
+        <li class="menu-item menu-item-我的朋友们">
+
+    <a href="/friends" rel="section"><i class="fa fa-user fa-fw"></i>我的朋友们</a>
+
+  </li>
+        <li class="menu-item menu-item-关于我">
+
+    <a href="/aboutme" rel="section"><i class="fa fa-user fa-fw"></i>关于我</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <section class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF-CAS"><span class="nav-number">1.</span> <span class="nav-text">什么是 CAS</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#CAS-%E6%98%AF%E6%80%8E%E4%B9%88%E5%AE%9E%E7%8E%B0%E7%9A%84"><span class="nav-number">2.</span> <span class="nav-text">CAS 是怎么实现的</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#CAS-%E7%9A%84%E5%BA%94%E7%94%A8"><span class="nav-number">3.</span> <span class="nav-text">CAS 的应用</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%87%AA%E6%97%8B%E9%94%81"><span class="nav-number">3.1.</span> <span class="nav-text">自旋锁</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#AtomicInteger-%E7%9A%84-incrementAndGet"><span class="nav-number">3.2.</span> <span class="nav-text">AtomicInteger 的 incrementAndGet()</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%A4%E7%89%8C%E6%A1%B6%E9%99%90%E6%B5%81%E5%99%A8"><span class="nav-number">3.3.</span> <span class="nav-text">令牌桶限流器</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BD%92%E7%BA%B3"><span class="nav-number">3.4.</span> <span class="nav-text">归纳</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#CAS-%E7%BC%BA%E7%82%B9"><span class="nav-number">4.</span> <span class="nav-text">CAS 缺点</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">5.</span> <span class="nav-text">总结</span></a></li></ol></div>
+        </section>
+        <!--/noindex-->
+
+        <section class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Zhengxin Diao</p>
+  <div class="site-description" itemprop="description">北邮本科，University of Leicester EE 研究生，Java后端开发，目前就职阿里</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">41</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">73</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/diaozxin007" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;diaozxin007" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:diaozxin@163.com" title="E-Mail → mailto:diaozxin@163.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/diao-zheng-xin/activities" title="zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;diao-zheng-xin&#x2F;activities" rel="noopener" target="_blank"><i class="zhihu fa-fw"></i>zhihu</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml"><i class="rs fa-fw"></i>RSS</a>
+      </span>
+  </div>
+
+
+
+        </section>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://xilidou.com/2018/02/01/java-cas/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Zhengxin Diao">
+      <meta itemprop="description" content="北邮本科，University of Leicester EE 研究生，Java后端开发，目前就职阿里">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="犀利豆的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          JAVA 中的 CAS
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2018-02-01 13:56:06" itemprop="dateCreated datePublished" datetime="2018-02-01T13:56:06+08:00">2018-02-01</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">Edited on</span>
+        <time title="Modified: 2020-10-19 13:01:19" itemprop="dateModified" datetime="2020-10-19T13:01:19+08:00">2020-10-19</time>
+      </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2018/02/01/java-cas/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2018/02/01/java-cas/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>原文地址：<a target="_blank" rel="noopener" href="https://www.xilidou.com/2018/02/01/java-cas/">https://www.xilidou.com/2018/02/01/java-cas/</a></p>
+<p>CAS 是现代操作系统，解决并发问题的一个重要手段，最近在看 <code>eureka</code> 的源码的时候。遇到了很多 CAS 的操作。今天就系统的回顾一下 Java 中的CAS。</p>
+<p>阅读这篇文章你将会了解到：</p>
+<ul>
+<li>什么是 CAS</li>
+<li>CAS 实现原理是什么？</li>
+<li>CAS 在现实中的应用<ul>
+<li>自旋锁</li>
+<li>原子类型</li>
+<li>限流器</li>
+</ul>
+</li>
+<li>CAS 的缺点</li>
+</ul>
+<a id="more"></a>
+
+<h1 id="什么是-CAS"><a href="#什么是-CAS" class="headerlink" title="什么是 CAS"></a>什么是 CAS</h1><p>CAS: 全称Compare and swap，字面意思:”比较并交换“，一个 CAS 涉及到以下操作：</p>
+<blockquote>
+<p>我们假设内存中的原数据V，旧的预期值A，需要修改的新值B。</p>
+<ol>
+<li>比较 A 与 V 是否相等。（比较）</li>
+<li>如果比较相等，将 B 写入 V。（交换）</li>
+<li>返回操作是否成功。</li>
+</ol>
+</blockquote>
+<p>当多个线程同时对某个资源进行CAS操作，只能有一个线程操作成功，但是并不会阻塞其他线程,其他线程只会收到操作失败的信号。可见 CAS 其实是一个乐观锁。</p>
+<h1 id="CAS-是怎么实现的"><a href="#CAS-是怎么实现的" class="headerlink" title="CAS 是怎么实现的"></a>CAS 是怎么实现的</h1><p>跟随AtomInteger的代码我们一路往下，就能发现最终调用的是 <code>sum.misc.Unsafe</code> 这个类。看名称 Unsafe 就是一个不安全的类，这个类是利用了 Java 的类和包在可见性的的规则中的一个恰到好处处的漏洞。Unsafe 这个类为了速度，在Java的安全标准上做出了一定的妥协。</p>
+<p>再往下寻找我们发现 Unsafe的<code>compareAndSwapInt</code> 是 Native 的方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">native</span> <span class="keyword">boolean</span> <span class="title">compareAndSwapInt</span><span class="params">(Object var1, <span class="keyword">long</span> var2, <span class="keyword">int</span> var4, <span class="keyword">int</span> var5)</span></span>;</span><br></pre></td></tr></table></figure>
+
+<p>也就是说，这几个 CAS 的方法应该是使用了本地的方法。所以这几个方法的具体实现需要我们自己去 jdk 的源码中搜索。</p>
+<p>于是我下载一个 OpenJdk 的源码继续向下探索，我们发现在 <code>/jdk9u/hotspot/src/share/vm/unsafe.cpp</code> 中有这样的代码：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#123;CC <span class="string">&quot;compareAndSetInt&quot;</span>,   CC <span class="string">&quot;(&quot;</span> OBJ <span class="string">&quot;J&quot;</span><span class="string">&quot;I&quot;</span><span class="string">&quot;I&quot;</span><span class="string">&quot;)Z&quot;</span>,  FN_PTR(Unsafe_CompareAndSetInt)&#125;,</span><br></pre></td></tr></table></figure>
+
+<p>这个涉及到，JNI 的调用，感兴趣的同学可以自行学习。我们搜索 <code>Unsafe_CompareAndSetInt</code>后发现:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">UNSAFE_ENTRY(jboolean, Unsafe_CompareAndSetInt(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jint e, jint x)) &#123;</span><br><span class="line">  oop p = JNIHandles::resolve(obj);</span><br><span class="line">  jint* addr = (jint *)index_oop_from_field_offset_long(p, offset);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> (jint)(Atomic::cmpxchg(x, addr, e)) == e;</span><br><span class="line">&#125; UNSAFE_END</span><br></pre></td></tr></table></figure>
+
+<p>最终我们终于看到了核心代码 <code>Atomic::cmpxchg</code>。</p>
+<p>继续向底层探索，在文件<code>java/jdk9u/hotspot/src/os_cpu/linux_x86/vm/atomic_linux_x86.hpp</code>有这样的代码:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">inline</span> jint     <span class="title">Atomic::cmpxchg</span>    <span class="params">(jint     exchange_value, <span class="keyword">volatile</span> jint*     dest, jint     compare_value, cmpxchg_memory_order order)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">int</span> mp = os::is_MP();</span><br><span class="line">  <span class="function">__asm__ <span class="title">volatile</span> <span class="params">(LOCK_IF_MP(%<span class="number">4</span>) <span class="string">&quot;cmpxchgl %1,(%3)&quot;</span></span></span></span><br><span class="line"><span class="function"><span class="params">                    : <span class="string">&quot;=a&quot;</span> (exchange_value)</span></span></span><br><span class="line"><span class="function"><span class="params">                    : <span class="string">&quot;r&quot;</span> (exchange_value), <span class="string">&quot;a&quot;</span> (compare_value), <span class="string">&quot;r&quot;</span> (dest), <span class="string">&quot;r&quot;</span> (mp)</span></span></span><br><span class="line"><span class="function"><span class="params">                    : <span class="string">&quot;cc&quot;</span>, <span class="string">&quot;memory&quot;</span>)</span></span>;</span><br><span class="line">  <span class="keyword">return</span> exchange_value;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们通过文件名可以知道，针对不同的操作系统,JVM 对于 Atomic::cmpxchg 应该有不同的实现。由于我们服务基本都是使用的是64位linux，所以我们就看看linux_x86 的实现。</p>
+<p>我们继续看代码：</p>
+<ul>
+<li><code>__asm__</code> 的意思是这个是一段内嵌汇编代码。也就是在 C 语言中使用汇编代码。</li>
+<li>这里的 <code>volatile</code>和 JAVA 有一点类似，但不是为了内存的可见性，而是告诉编译器对访问该变量的代码就不再进行优化。</li>
+<li><code>LOCK_IF_MP(%4)</code> 的意思就比较简单，就是如果操作系统是多线程的，那就增加一个 LOCK。</li>
+<li><code>cmpxchgl</code> 就是汇编版的“比较并交换”。但是我们知道比较并交换，有三个步骤，不是原子的。所以在多核情况下加一个 LOCK，由CPU硬件保证他的原子性。</li>
+<li>我们再看看 LOCK 是怎么实现的呢？我们去Intel的官网上看看，可以知道LOCK在的早期实现是直接将 cup 的总线阻塞，这样的实现可见效率是很低下的。后来优化为X86 cpu 有锁定一个特定内存地址的能力，当这个特定内存地址被锁定后，它就可以阻止其他的系统总线读取或修改这个内存地址。</li>
+</ul>
+<p>关于 CAS 的底层探索我们就到此为止。我们总结一下 JAVA 的 cas 是怎么实现的：</p>
+<ul>
+<li>java 的 cas 利用的的是 unsafe 这个类提供的 cas 操作。</li>
+<li>unsafe 的cas 依赖了的是 jvm 针对不同的操作系统实现的 Atomic::cmpxchg</li>
+<li>Atomic::cmpxchg 的实现使用了汇编的 cas 操作，并使用 cpu 硬件提供的 lock信号保证其原子性</li>
+</ul>
+<h1 id="CAS-的应用"><a href="#CAS-的应用" class="headerlink" title="CAS 的应用"></a>CAS 的应用</h1><p>了解了 CAS 的原理我们继续就看看 CAS 的应用：</p>
+<h2 id="自旋锁"><a href="#自旋锁" class="headerlink" title="自旋锁"></a>自旋锁</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SpinLock</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> AtomicReference&lt;Thread&gt; sign =<span class="keyword">new</span> AtomicReference&lt;&gt;();</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">lock</span><span class="params">()</span></span>&#123;</span><br><span class="line">    Thread current = Thread.currentThread();</span><br><span class="line">    <span class="keyword">while</span>(!sign .compareAndSet(<span class="keyword">null</span>, current))&#123;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">unlock</span> <span class="params">()</span></span>&#123;</span><br><span class="line">    Thread current = Thread.currentThread();</span><br><span class="line">    sign .compareAndSet(current, <span class="keyword">null</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>所谓自旋锁，我觉得这个名字相当的形象，在lock()的时候，一直while()循环，直到 cas 操作成功为止。</p>
+<h2 id="AtomicInteger-的-incrementAndGet"><a href="#AtomicInteger-的-incrementAndGet" class="headerlink" title="AtomicInteger 的 incrementAndGet()"></a>AtomicInteger 的 incrementAndGet()</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">int</span> <span class="title">getAndAddInt</span><span class="params">(Object var1, <span class="keyword">long</span> var2, <span class="keyword">int</span> var4)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> var5;</span><br><span class="line">    <span class="keyword">do</span> &#123;</span><br><span class="line">        var5 = <span class="keyword">this</span>.getIntVolatile(var1, var2);</span><br><span class="line">    &#125; <span class="keyword">while</span>(!<span class="keyword">this</span>.compareAndSwapInt(var1, var2, var5, var5 + var4));</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> var5;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>与自旋锁有异曲同工之妙，就是一直while，直到操作成功为止。</p>
+<h2 id="令牌桶限流器"><a href="#令牌桶限流器" class="headerlink" title="令牌桶限流器"></a>令牌桶限流器</h2><p>所谓令牌桶限流器，就是系统以恒定的速度向桶内增加令牌。每次请求前从令牌桶里面获取令牌。如果获取到令牌就才可以进行访问。当令牌桶内没有令牌的时候，拒绝提供服务。我们来看看 <code>eureka</code> 的限流器是如何使用 CAS 来维护多线程环境下对 token 的增加和分发的。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">RateLimiter</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">long</span> rateToMsConversion;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> AtomicInteger consumedTokens = <span class="keyword">new</span> AtomicInteger();</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> AtomicLong lastRefillTime = <span class="keyword">new</span> AtomicLong(<span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Deprecated</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">RateLimiter</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>(TimeUnit.SECONDS);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">RateLimiter</span><span class="params">(TimeUnit averageRateUnit)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">switch</span> (averageRateUnit) &#123;</span><br><span class="line">            <span class="keyword">case</span> SECONDS:</span><br><span class="line">                rateToMsConversion = <span class="number">1000</span>;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">case</span> MINUTES:</span><br><span class="line">                rateToMsConversion = <span class="number">60</span> * <span class="number">1000</span>;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">default</span>:</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">&quot;TimeUnit of &quot;</span> + averageRateUnit + <span class="string">&quot; is not supported&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//提供给外界获取 token 的方法</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">acquire</span><span class="params">(<span class="keyword">int</span> burstSize, <span class="keyword">long</span> averageRate)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> acquire(burstSize, averageRate, System.currentTimeMillis());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">acquire</span><span class="params">(<span class="keyword">int</span> burstSize, <span class="keyword">long</span> averageRate, <span class="keyword">long</span> currentTimeMillis)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (burstSize &lt;= <span class="number">0</span> || averageRate &lt;= <span class="number">0</span>) &#123; <span class="comment">// Instead of throwing exception, we just let all the traffic go</span></span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">//添加token</span></span><br><span class="line">        refillToken(burstSize, averageRate, currentTimeMillis);</span><br><span class="line"></span><br><span class="line">        <span class="comment">//消费token</span></span><br><span class="line">        <span class="keyword">return</span> consumeToken(burstSize);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">refillToken</span><span class="params">(<span class="keyword">int</span> burstSize, <span class="keyword">long</span> averageRate, <span class="keyword">long</span> currentTimeMillis)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">long</span> refillTime = lastRefillTime.get();</span><br><span class="line">        <span class="keyword">long</span> timeDelta = currentTimeMillis - refillTime;</span><br><span class="line"></span><br><span class="line">        <span class="comment">//根据频率计算需要增加多少 token</span></span><br><span class="line">        <span class="keyword">long</span> newTokens = timeDelta * averageRate / rateToMsConversion;</span><br><span class="line">        <span class="keyword">if</span> (newTokens &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">long</span> newRefillTime = refillTime == <span class="number">0</span></span><br><span class="line">                    ? currentTimeMillis</span><br><span class="line">                    : refillTime + newTokens * rateToMsConversion / averageRate;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// CAS 保证有且仅有一个线程进入填充</span></span><br><span class="line">            <span class="keyword">if</span> (lastRefillTime.compareAndSet(refillTime, newRefillTime)) &#123;</span><br><span class="line">                <span class="keyword">while</span> (<span class="keyword">true</span>) &#123;</span><br><span class="line">                    <span class="keyword">int</span> currentLevel = consumedTokens.get();</span><br><span class="line">                    <span class="keyword">int</span> adjustedLevel = Math.min(currentLevel, burstSize); <span class="comment">// In case burstSize decreased</span></span><br><span class="line">                    <span class="keyword">int</span> newLevel = (<span class="keyword">int</span>) Math.max(<span class="number">0</span>, adjustedLevel - newTokens);</span><br><span class="line">                    <span class="comment">// while true 直到更新成功为止</span></span><br><span class="line">                    <span class="keyword">if</span> (consumedTokens.compareAndSet(currentLevel, newLevel)) &#123;</span><br><span class="line">                        <span class="keyword">return</span>;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">boolean</span> <span class="title">consumeToken</span><span class="params">(<span class="keyword">int</span> burstSize)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">while</span> (<span class="keyword">true</span>) &#123;</span><br><span class="line">            <span class="keyword">int</span> currentLevel = consumedTokens.get();</span><br><span class="line">            <span class="keyword">if</span> (currentLevel &gt;= burstSize) &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// while true 直到没有token 或者 获取到为止</span></span><br><span class="line">            <span class="keyword">if</span> (consumedTokens.compareAndSet(currentLevel, currentLevel + <span class="number">1</span>)) &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">reset</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        consumedTokens.set(<span class="number">0</span>);</span><br><span class="line">        lastRefillTime.set(<span class="number">0</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>所以梳理一下 CAS 在令牌桶限流器的作用。就是保证在多线程情况下，不阻塞线程的填充token 和消费token。</p>
+<h2 id="归纳"><a href="#归纳" class="headerlink" title="归纳"></a>归纳</h2><p>通过上面的三个应用我们归纳一下 CAS 的应用场景：</p>
+<ul>
+<li>CAS 的使用能够避免线程的阻塞。</li>
+<li>多数情况下我们使用的是 while true 直到成功为止。</li>
+</ul>
+<h1 id="CAS-缺点"><a href="#CAS-缺点" class="headerlink" title="CAS 缺点"></a>CAS 缺点</h1><ol>
+<li>ABA 的问题，就是一个值从A变成了B又变成了A，使用CAS操作不能发现这个值发生变化了，处理方式是可以使用携带类似时间戳的版本AtomicStampedReference</li>
+<li>性能问题，我们使用时大部分时间使用的是 while true 方式对数据的修改，直到成功为止。优势就是相应极快，但当线程数不停增加时，性能下降明显，因为每个线程都需要执行，占用CPU时间。</li>
+</ol>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>CAS 是整个编程重要的思想之一。整个计算机的实现中都有CAS的身影。微观上看汇编的 CAS 是实现操作系统级别的原子操作的基石。从编程语言角度来看 CAS 是实现多线程非阻塞操作的基石。宏观上看，在分布式系统中，我们可以使用 CAS 的思想利用类似<code>Redis</code>的外部存储，也能实现一个分布式锁。</p>
+<p>从某个角度来说架构就将微观的实现放大，或者底层思想就是将宏观的架构进行微缩。计算机的思想是想通的，所以说了解底层的实现可以提升架构能力，提升架构的能力同样可加深对底层实现的理解。计算机知识浩如烟海，但是套路有限。抓住基础的几个套路突破，从思想和思维的角度学习计算机知识。不要将自己的精力花费在不停的追求新技术的脚步上，跟随‘start guide line’只能写一个demo，所得也就是一个demo而已。</p>
+<p>停下脚步，回顾基础和经典或许对于技术的提升更大一些。</p>
+<p>希望这篇文章对大家有所帮助。</p>
+<p>徒手撸框架系列文章地址：</p>
+<p><a target="_blank" rel="noopener" href="https://www.xilidou.com/2018/01/22/merge-request/">徒手撸框架–高并发环境下的请求合并</a><br><a target="_blank" rel="noopener" href="https://www.xilidou.com/2018/01/08/spring-ioc/">徒手撸框架–实现IoC</a><br><a target="_blank" rel="noopener" href="https://www.xilidou.com/2018/01/13/spring-aop/">徒手撸框架–实现Aop</a></p>
+<p>欢迎关注我的微信公众号<br><img src="https://img.xilidou.com/img/2019-04-25-022207.jpg" alt="二维码"></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/java/" rel="tag"># java</a>
+              <a href="/tags/%E9%94%81/" rel="tag"># 锁</a>
+              <a href="/tags/cas/" rel="tag"># cas</a>
+              <a href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" rel="tag"># 高并发</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2018/01/22/merge-request/" rel="prev" title="徒手撸框架--高并发环境下的请求合并">
+                  <i class="fa fa-chevron-left"></i> 徒手撸框架--高并发环境下的请求合并
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2018/02/09/thread-corepoolsize/" rel="next" title="线程池 execute() 的工作逻辑">
+                  线程池 execute() 的工作逻辑 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+      
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="noopener" target="_blank">京ICP备17065467号-1 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Zhengxin Diao</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/@next-theme/pjax@0.4.0/pjax.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+  <script>
+var pjax = new Pjax({
+  selectors: [
+    'head title',
+    '.page-configurations',
+    '.main-inner',
+    '.post-toc-wrap',
+    '.languages',
+    '.pjax'
+  ],
+  analytics: false,
+  cacheBust: false,
+  scrollRestoration: false,
+  scrollTo: !CONFIG.bookmark.enable
+});
+
+document.addEventListener('pjax:success', () => {
+  pjax.executeScripts(document.querySelectorAll('script[data-pjax], .pjax script'));
+  NexT.boot.refresh();
+  // Define Motion Sequence & Bootstrap Motion.
+  if (CONFIG.motion.enable) {
+    NexT.motion.integrator
+      .init()
+      .add(NexT.motion.middleWares.subMenu)
+      .add(NexT.motion.middleWares.postList)
+      .bootstrap();
+  }
+  const hasTOC = document.querySelector('.post-toc');
+  document.querySelector('.sidebar-inner').classList.toggle('sidebar-nav-active', hasTOC);
+  document.querySelector(hasTOC ? '.sidebar-nav-toc' : '.sidebar-nav-overview').click();
+  NexT.utils.updateSidebarPosition();
+});
+</script>
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+
+
+
+    <div class="pjax">
+  
+
+  
+
+<script>
+NexT.utils.loadComments('#valine-comments', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/valine@1.4.14/dist/Valine.min.js', () => {
+    new Valine(Object.assign({"enable":true,"appId":"U1CnWFNMjPMQtQ26DeVu6kXh-gzGzoHsz","appKey":"8YqgRu5iJFBdqRSe945Bu9le# Your leancloud application appkey","serverURLs":null,"placeholder":"做了一点微小的工作","avatar":"mm","meta":["nick","mail","link"],"pageSize":10,"lang":null,"visitor":false,"comment_count":true,"recordIP":false,"enableQQ":false,"requiredFields":[]}, {
+      el: '#valine-comments',
+      path: "/2018/02/01/java-cas/",
+      serverURLs: "https://u1cnwfnm.api.lncldglobal.com"
+    }));
+  }, window.Valine);
+});
+</script>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.2.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.1/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"xilidou.com","root":"/","images":"/images","scheme":"Pisces","version":"8.0.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="十一假期，本来想找一本股票相关书读一读。机缘巧合就找到了这本武剑锋博士写的《交易系统》。这本书主要讲了上海证券交易系统在技术管理、架构设计、应用调优、切换部署、运行维护等方面的经验和教训。成书的时间大概是在2010年，交易系统的上线时间大概在2008年，聚现在已经接近十年了，但是书中介绍的很多开发时候的原则和思路放在今天来看也有很大的价值可以学习。同时，这也是一本介绍大型系统开发的简要过程的参考书">
+<meta property="og:type" content="article">
+<meta property="og:title" content="《交易系统：更新与跨越》读后笔记">
+<meta property="og:url" content="https://xilidou.com/2017/10/24/%E3%80%8A%E4%BA%A4%E6%98%93%E7%B3%BB%E7%BB%9F%EF%BC%9A%E6%9B%B4%E6%96%B0%E4%B8%8E%E8%B7%A8%E8%B6%8A%E3%80%8B%E8%AF%BB%E5%90%8E%E7%AC%94%E8%AE%B0/index.html">
+<meta property="og:site_name" content="犀利豆的博客">
+<meta property="og:description" content="十一假期，本来想找一本股票相关书读一读。机缘巧合就找到了这本武剑锋博士写的《交易系统》。这本书主要讲了上海证券交易系统在技术管理、架构设计、应用调优、切换部署、运行维护等方面的经验和教训。成书的时间大概是在2010年，交易系统的上线时间大概在2008年，聚现在已经接近十年了，但是书中介绍的很多开发时候的原则和思路放在今天来看也有很大的价值可以学习。同时，这也是一本介绍大型系统开发的简要过程的参考书">
+<meta property="og:locale">
+<meta property="article:published_time" content="2017-10-24T10:51:03.000Z">
+<meta property="article:modified_time" content="2020-10-19T05:01:19.000Z">
+<meta property="article:author" content="Zhengxin Diao">
+<meta property="article:tag" content="架构">
+<meta property="article:tag" content="读书笔记">
+<meta property="article:tag" content="后端">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://xilidou.com/2017/10/24/%E3%80%8A%E4%BA%A4%E6%98%93%E7%B3%BB%E7%BB%9F%EF%BC%9A%E6%9B%B4%E6%96%B0%E4%B8%8E%E8%B7%A8%E8%B6%8A%E3%80%8B%E8%AF%BB%E5%90%8E%E7%AC%94%E8%AE%B0/">
+
+
+<script data-pjax class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh'
+  };
+</script>
+
+  <title>《交易系统：更新与跨越》读后笔记 | 犀利豆的博客</title>
+  
+
+
+  <script data-pjax>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?5d32532da741f4430197fd778ea752f1";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  <script data-pjax>
+    !function(e,t,n,g,i){e[i]=e[i]||function(){(e[i].q=e[i].q||[]).push(arguments)},n=t.createElement("script"),tag=t.getElementsByTagName("script")[0],n.async=1,n.src=('https:'==document.location.protocol?'https://':'http://')+g,tag.parentNode.insertBefore(n,tag)}(window,document,"script","assets.growingio.com/2.1/gio.js","gio");
+    gio('init', 'UA-35317601-2', {});
+    gio('send');
+  </script>
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">犀利豆的博客</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">高质量的技术博客</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-java">
+
+    <a href="/tags/java/" rel="section"><i class="fa fa-th fa-fw"></i>java</a>
+
+  </li>
+        <li class="menu-item menu-item-redis">
+
+    <a href="/tags/redis/" rel="section"><i class="fa fa-th fa-fw"></i>redis</a>
+
+  </li>
+        <li class="menu-item menu-item-dubbo">
+
+    <a href="/tags/dubbo/" rel="section"><i class="fa fa-th fa-fw"></i>dubbo</a>
+
+  </li>
+        <li class="menu-item menu-item-tools">
+
+    <a href="/tags/tools" rel="section"><i class="fa fa-th fa-fw"></i>tools</a>
+
+  </li>
+        <li class="menu-item menu-item-我的朋友们">
+
+    <a href="/friends" rel="section"><i class="fa fa-user fa-fw"></i>我的朋友们</a>
+
+  </li>
+        <li class="menu-item menu-item-关于我">
+
+    <a href="/aboutme" rel="section"><i class="fa fa-user fa-fw"></i>关于我</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <section class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%A4%A7%E5%9E%8B%E7%B3%BB%E7%BB%9F%E7%9A%84%E7%AE%A1%E7%90%86"><span class="nav-number">1.</span> <span class="nav-text">大型系统的管理</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%A2%E9%98%9F%E7%AE%A1%E7%90%86%EF%BC%9A"><span class="nav-number">1.1.</span> <span class="nav-text">团队管理：</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%A1%B9%E7%9B%AE%E8%B4%A8%E9%87%8F"><span class="nav-number">1.2.</span> <span class="nav-text">项目质量</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%9D%A2%E5%90%91%E5%A4%89%E6%9B%B4"><span class="nav-number">1.3.</span> <span class="nav-text">面向変更</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84"><span class="nav-number">2.</span> <span class="nav-text">系统架构</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1%E7%9B%AE%E6%A0%87"><span class="nav-number">2.1.</span> <span class="nav-text">系统设计目标</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1%E5%8E%9F%E5%88%99"><span class="nav-number">2.2.</span> <span class="nav-text">系统设计原则</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%B0%83%E4%BC%98%E5%8E%9F%E5%88%99"><span class="nav-number">2.3.</span> <span class="nav-text">调优原则</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%8E%E8%AE%B0"><span class="nav-number">2.4.</span> <span class="nav-text">后记</span></a></li></ol></li></ol></div>
+        </section>
+        <!--/noindex-->
+
+        <section class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Zhengxin Diao</p>
+  <div class="site-description" itemprop="description">北邮本科，University of Leicester EE 研究生，Java后端开发，目前就职阿里</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">41</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">73</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/diaozxin007" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;diaozxin007" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:diaozxin@163.com" title="E-Mail → mailto:diaozxin@163.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/diao-zheng-xin/activities" title="zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;diao-zheng-xin&#x2F;activities" rel="noopener" target="_blank"><i class="zhihu fa-fw"></i>zhihu</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml"><i class="rs fa-fw"></i>RSS</a>
+      </span>
+  </div>
+
+
+
+        </section>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://xilidou.com/2017/10/24/%E3%80%8A%E4%BA%A4%E6%98%93%E7%B3%BB%E7%BB%9F%EF%BC%9A%E6%9B%B4%E6%96%B0%E4%B8%8E%E8%B7%A8%E8%B6%8A%E3%80%8B%E8%AF%BB%E5%90%8E%E7%AC%94%E8%AE%B0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Zhengxin Diao">
+      <meta itemprop="description" content="北邮本科，University of Leicester EE 研究生，Java后端开发，目前就职阿里">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="犀利豆的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          《交易系统：更新与跨越》读后笔记
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2017-10-24 18:51:03" itemprop="dateCreated datePublished" datetime="2017-10-24T18:51:03+08:00">2017-10-24</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">Edited on</span>
+        <time title="Modified: 2020-10-19 13:01:19" itemprop="dateModified" datetime="2020-10-19T13:01:19+08:00">2020-10-19</time>
+      </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2017/10/24/%E3%80%8A%E4%BA%A4%E6%98%93%E7%B3%BB%E7%BB%9F%EF%BC%9A%E6%9B%B4%E6%96%B0%E4%B8%8E%E8%B7%A8%E8%B6%8A%E3%80%8B%E8%AF%BB%E5%90%8E%E7%AC%94%E8%AE%B0/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2017/10/24/%E3%80%8A%E4%BA%A4%E6%98%93%E7%B3%BB%E7%BB%9F%EF%BC%9A%E6%9B%B4%E6%96%B0%E4%B8%8E%E8%B7%A8%E8%B6%8A%E3%80%8B%E8%AF%BB%E5%90%8E%E7%AC%94%E8%AE%B0/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>十一假期，本来想找一本股票相关书读一读。机缘巧合就找到了这本武剑锋博士写的<a target="_blank" rel="noopener" href="https://book.douban.com/subject/5918414/">《交易系统》</a>。这本书主要讲了上海证券交易系统在技术管理、架构设计、应用调优、切换部署、运行维护等方面的经验和教训。成书的时间大概是在2010年，交易系统的上线时间大概在2008年，聚现在已经接近十年了，但是书中介绍的很多开发时候的原则和思路放在今天来看也有很大的价值可以学习。同时，这也是一本介绍大型系统开发的简要过程的参考书目。</p>
+<p>本书涉及了不少的证券相关知识，涉及证券知识的章节我就略读做了解。对剩下的关于大型系统的设计，管理，架构，优化相关的章节进行了精读，记录相关笔记供自己回顾和思考。</p>
+<a id="more"></a>
+
+<h1 id="大型系统的管理"><a href="#大型系统的管理" class="headerlink" title="大型系统的管理"></a>大型系统的管理</h1><h2 id="团队管理："><a href="#团队管理：" class="headerlink" title="团队管理："></a>团队管理：</h2><p>将整个系统自上而下的分割为多个松耦合的且相对独立的系统，这样来避免出现整个系统级的问题，遇到问题分而治之。在系统初期设计系统时隐藏细节实现，提前发现系统总体架构上的缺陷，提前修正。各个独立的小系统可用分别的启动，评审，开发测试。<br>配合系统分制的结构，人员也分解为小团队。团队目标一致，团队内的文档，设计，代码均是公开的，团队成员都是知晓的。</p>
+<p>系统的设计和开发过程中，团队成员在有纪律和规则的前提下进行发散和创新。团队中应该有一个人来确保，讨论以后收敛结论，保证团队“有序”和“规则”。无限的发散只会带来大量内耗。</p>
+<h2 id="项目质量"><a href="#项目质量" class="headerlink" title="项目质量"></a>项目质量</h2><p>这一部分，没有什么争议，对于测试的重要性，应该已经是开发人员公认的公理。</p>
+<p>保证测试时间。</p>
+<p>测试范畴推广，作者指出，不但要对代码进行测试，还需要对文档，设计提前测试。</p>
+<p>纠错优于创新。</p>
+<h2 id="面向変更"><a href="#面向変更" class="headerlink" title="面向変更"></a>面向変更</h2><p>看完作者这一部分的描写，简直不能同意更多。</p>
+<p>这一章的第一个小标题就是“为了将来丢弃而现在建设”。大型系统的开发不是一蹴而就的，很多系统的初版都是不太能令人满意的，所以不断的重构是一直贯穿到系统的生命周期之中的。作者所谓的“为了将来丢弃而现在建设”，就是开发过程中准备在将来用更高效的和更易于扩展的代码来替代目前正在编写的模块。<br>重构的过程中，要有精确定义的需求为指导。否则重构结果并不乐观。<br>系统的不断演进和需求不断的增加，会导致系统代码混乱，“熵”不断增加。重构就是为了减少系统的“熵”。<br>系统的不断开发中，会产生“死代码”，需要及时去除。重构中要考虑去除复制张贴的代码，并把这些代码抽象为公共库。</p>
+<p>需求的变更是常态，开发中不应该抗拒和讨厌，对变更进行管理。开发过程中应该为变更做好准备。但是一个系统不能“广泛参数化”。平衡度也很关键。</p>
+<h1 id="系统架构"><a href="#系统架构" class="headerlink" title="系统架构"></a>系统架构</h1><h2 id="系统设计目标"><a href="#系统设计目标" class="headerlink" title="系统设计目标"></a>系统设计目标</h2><p>在设计开始前应当估计系统的极限，留有一定的安全余量，进行开发。</p>
+<p>在大型系统设计中，一直性是重要的考量，有的时候可以牺牲不规则的特性和改进，保证一致性。同时应当保证一致性的文档应该落地。</p>
+<p>高内聚低耦合，这个原则应该是我们初学编程就一直强调的原则，我们应该保证模块之间的正交性质。保证低耦合，我们应该做的就是强制接口定义，隐藏实现细节，不使用公共的数据结构。所谓高内聚是指一个模块只实现一个功能。高内聚的软件易于维护和改进。</p>
+<p>系统应当适当的进行“过度设计”，提升系统的灵活性。</p>
+<p>使用“打包”提升系统的吞吐量。一个是“时间片”，定时进行打包操作一次请求。二是收集足够多的的处理请求后打包处理。在系统优化的过程中，一个是优化算法的实现，二是使用空间换时间的。</p>
+<p>高可用的设计，使用“持久化”和“冗余”提升系统的高可靠性。</p>
+<p>系统的高扩展性，通过以下方式提升：</p>
+<ul>
+<li>按照功能划分模块独立部署</li>
+<li>按照负载划分系统</li>
+<li>避免分布式事务</li>
+<li>在模块间使用异步处理</li>
+</ul>
+<h2 id="系统设计原则"><a href="#系统设计原则" class="headerlink" title="系统设计原则"></a>系统设计原则</h2><p>系统分层设计，系统设计成<strong>金字塔</strong>型，越核心的测系统，设备接入越少，关系越简单，可靠性越高。</p>
+<p>故障隔离设计。</p>
+<p>无单点。</p>
+<p>消息驱动模型的设计：</p>
+<ul>
+<li>前台发消息无ack重发</li>
+<li>后台消息处理需要幂等</li>
+<li>消息在每个界定啊都被存储并加标记</li>
+</ul>
+<p>其实这个设计，很类似Kafka的实现。 </p>
+<h2 id="调优原则"><a href="#调优原则" class="headerlink" title="调优原则"></a>调优原则</h2><p>先将单机的能力提升，再水平扩展</p>
+<p>对大量访问的数据，使用内存方式提高速度（现在看来就是使用缓存），结合磁盘“持久化”。</p>
+<p>优化核心算法。</p>
+<p>使用异步I/O。</p>
+<p>传输压缩，打包和流控技术。</p>
+<h2 id="后记"><a href="#后记" class="headerlink" title="后记"></a>后记</h2><p>这本书，提出的一些系统设计和开发原则，现在看来大部分已经在我接触过的的系统中大量的使用。可见系统的基本设计原则，经过快十年的发展也没有太大的变化。十年前的一些原则已经有很多成熟的技术实现了。大型系统的开发逐渐变得容易，系统的设计人员可以将更多的精力来组合各个成熟实现，快速搭建系统。推荐这本书给大家，感受大型系统构建的各个方面细节，开阔视野。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%9E%B6%E6%9E%84/" rel="tag"># 架构</a>
+              <a href="/tags/%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/" rel="tag"># 读书笔记</a>
+              <a href="/tags/%E5%90%8E%E7%AB%AF/" rel="tag"># 后端</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2017/10/24/Netty-Apns%E6%8E%A5%E5%85%A5%E5%AE%9E%E7%8E%B0/" rel="prev" title="Netty-Apns接入实现">
+                  <i class="fa fa-chevron-left"></i> Netty-Apns接入实现
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2017/10/24/Kafka%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86%E7%AC%94%E8%AE%B0/" rel="next" title="Kafka实现原理笔记">
+                  Kafka实现原理笔记 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+      
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="noopener" target="_blank">京ICP备17065467号-1 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Zhengxin Diao</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/@next-theme/pjax@0.4.0/pjax.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+  <script>
+var pjax = new Pjax({
+  selectors: [
+    'head title',
+    '.page-configurations',
+    '.main-inner',
+    '.post-toc-wrap',
+    '.languages',
+    '.pjax'
+  ],
+  analytics: false,
+  cacheBust: false,
+  scrollRestoration: false,
+  scrollTo: !CONFIG.bookmark.enable
+});
+
+document.addEventListener('pjax:success', () => {
+  pjax.executeScripts(document.querySelectorAll('script[data-pjax], .pjax script'));
+  NexT.boot.refresh();
+  // Define Motion Sequence & Bootstrap Motion.
+  if (CONFIG.motion.enable) {
+    NexT.motion.integrator
+      .init()
+      .add(NexT.motion.middleWares.subMenu)
+      .add(NexT.motion.middleWares.postList)
+      .bootstrap();
+  }
+  const hasTOC = document.querySelector('.post-toc');
+  document.querySelector('.sidebar-inner').classList.toggle('sidebar-nav-active', hasTOC);
+  document.querySelector(hasTOC ? '.sidebar-nav-toc' : '.sidebar-nav-overview').click();
+  NexT.utils.updateSidebarPosition();
+});
+</script>
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+
+
+
+    <div class="pjax">
+  
+
+  
+
+<script>
+NexT.utils.loadComments('#valine-comments', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/valine@1.4.14/dist/Valine.min.js', () => {
+    new Valine(Object.assign({"enable":true,"appId":"U1CnWFNMjPMQtQ26DeVu6kXh-gzGzoHsz","appKey":"8YqgRu5iJFBdqRSe945Bu9le# Your leancloud application appkey","serverURLs":null,"placeholder":"做了一点微小的工作","avatar":"mm","meta":["nick","mail","link"],"pageSize":10,"lang":null,"visitor":false,"comment_count":true,"recordIP":false,"enableQQ":false,"requiredFields":[]}, {
+      el: '#valine-comments',
+      path: "/2017/10/24/%E3%80%8A%E4%BA%A4%E6%98%93%E7%B3%BB%E7%BB%9F%EF%BC%9A%E6%9B%B4%E6%96%B0%E4%B8%8E%E8%B7%A8%E8%B6%8A%E3%80%8B%E8%AF%BB%E5%90%8E%E7%AC%94%E8%AE%B0/",
+      serverURLs: "https://u1cnwfnm.api.lncldglobal.com"
+    }));
+  }, window.Valine);
+});
+</script>
+
+    </div>
+</body>
+</html>

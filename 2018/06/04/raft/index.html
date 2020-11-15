@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.2.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.1/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"xilidou.com","root":"/","images":"/images","scheme":"Pisces","version":"8.0.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="好久没有更新博客了，最近研究了Raft 协议，谈谈自己对 Raft 协议的理解。希望这篇文章能够帮助大家理解 Raft 论文。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Raft 协议学习笔记">
+<meta property="og:url" content="https://xilidou.com/2018/06/04/raft/index.html">
+<meta property="og:site_name" content="犀利豆的博客">
+<meta property="og:description" content="好久没有更新博客了，最近研究了Raft 协议，谈谈自己对 Raft 协议的理解。希望这篇文章能够帮助大家理解 Raft 论文。">
+<meta property="og:locale">
+<meta property="og:image" content="https://img.xilidou.com/img/raft_role.png">
+<meta property="og:image" content="https://img.xilidou.com/img/raft_error.png">
+<meta property="og:image" content="https://img.xilidou.com/img/raft2.jpg">
+<meta property="article:published_time" content="2018-06-04T13:40:31.000Z">
+<meta property="article:modified_time" content="2020-10-19T05:01:19.000Z">
+<meta property="article:author" content="Zhengxin Diao">
+<meta property="article:tag" content="分布式">
+<meta property="article:tag" content="raft">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://img.xilidou.com/img/raft_role.png">
+
+
+<link rel="canonical" href="https://xilidou.com/2018/06/04/raft/">
+
+
+<script data-pjax class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh'
+  };
+</script>
+
+  <title>Raft 协议学习笔记 | 犀利豆的博客</title>
+  
+
+
+  <script data-pjax>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?5d32532da741f4430197fd778ea752f1";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  <script data-pjax>
+    !function(e,t,n,g,i){e[i]=e[i]||function(){(e[i].q=e[i].q||[]).push(arguments)},n=t.createElement("script"),tag=t.getElementsByTagName("script")[0],n.async=1,n.src=('https:'==document.location.protocol?'https://':'http://')+g,tag.parentNode.insertBefore(n,tag)}(window,document,"script","assets.growingio.com/2.1/gio.js","gio");
+    gio('init', 'UA-35317601-2', {});
+    gio('send');
+  </script>
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">犀利豆的博客</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">高质量的技术博客</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-java">
+
+    <a href="/tags/java/" rel="section"><i class="fa fa-th fa-fw"></i>java</a>
+
+  </li>
+        <li class="menu-item menu-item-redis">
+
+    <a href="/tags/redis/" rel="section"><i class="fa fa-th fa-fw"></i>redis</a>
+
+  </li>
+        <li class="menu-item menu-item-dubbo">
+
+    <a href="/tags/dubbo/" rel="section"><i class="fa fa-th fa-fw"></i>dubbo</a>
+
+  </li>
+        <li class="menu-item menu-item-tools">
+
+    <a href="/tags/tools" rel="section"><i class="fa fa-th fa-fw"></i>tools</a>
+
+  </li>
+        <li class="menu-item menu-item-我的朋友们">
+
+    <a href="/friends" rel="section"><i class="fa fa-user fa-fw"></i>我的朋友们</a>
+
+  </li>
+        <li class="menu-item menu-item-关于我">
+
+    <a href="/aboutme" rel="section"><i class="fa fa-user fa-fw"></i>关于我</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <section class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Raft-%E6%98%AF%E4%BB%80%E4%B9%88"><span class="nav-number">1.</span> <span class="nav-text">Raft 是什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9F%BA%E6%9C%AC%E5%AE%89%E5%85%A8%E4%BF%9D%E8%AF%81"><span class="nav-number">2.</span> <span class="nav-text">基本安全保证</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%80%89%E5%8F%96%E9%A2%86%E5%AF%BC%E8%80%85"><span class="nav-number">3.</span> <span class="nav-text">选取领导者</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%97%A5%E5%BF%97%E5%90%8C%E6%AD%A5"><span class="nav-number">4.</span> <span class="nav-text">日志同步</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%89%E5%85%A8%E5%88%86%E6%9E%90"><span class="nav-number">5.</span> <span class="nav-text">安全分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%89%E4%B8%BE%E9%99%90%E5%88%B6"><span class="nav-number">5.1.</span> <span class="nav-text">选举限制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8F%90%E4%BA%A4%E4%B9%8B%E5%89%8D%E4%BB%BB%E6%9C%9F%E7%9A%84%E6%97%A5%E5%BF%97%E6%9D%A1%E7%9B%AE"><span class="nav-number">5.2.</span> <span class="nav-text">提交之前任期的日志条目</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%BD%E9%9A%8F%E8%80%85%E5%92%8C%E5%80%99%E9%80%89%E4%BA%BA%E5%B4%A9%E6%BA%83"><span class="nav-number">6.</span> <span class="nav-text">追随者和候选人崩溃</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%B3%BB%E7%BB%9F%E7%9A%84%E6%89%A9%E5%AE%B9"><span class="nav-number">7.</span> <span class="nav-text">系统的扩容</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%97%A5%E5%BF%97%E7%9A%84%E5%8E%8B%E7%BC%A9"><span class="nav-number">8.</span> <span class="nav-text">日志的压缩</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%A2%E6%88%B7%E7%AB%AF%E4%BA%A4%E4%BA%92"><span class="nav-number">9.</span> <span class="nav-text">客户端交互</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">10.</span> <span class="nav-text">参考</span></a></li></ol></div>
+        </section>
+        <!--/noindex-->
+
+        <section class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Zhengxin Diao</p>
+  <div class="site-description" itemprop="description">北邮本科，University of Leicester EE 研究生，Java后端开发，目前就职阿里</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">41</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">73</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/diaozxin007" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;diaozxin007" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:diaozxin@163.com" title="E-Mail → mailto:diaozxin@163.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/diao-zheng-xin/activities" title="zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;diao-zheng-xin&#x2F;activities" rel="noopener" target="_blank"><i class="zhihu fa-fw"></i>zhihu</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml"><i class="rs fa-fw"></i>RSS</a>
+      </span>
+  </div>
+
+
+
+        </section>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://xilidou.com/2018/06/04/raft/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Zhengxin Diao">
+      <meta itemprop="description" content="北邮本科，University of Leicester EE 研究生，Java后端开发，目前就职阿里">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="犀利豆的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Raft 协议学习笔记
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2018-06-04 21:40:31" itemprop="dateCreated datePublished" datetime="2018-06-04T21:40:31+08:00">2018-06-04</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">Edited on</span>
+        <time title="Modified: 2020-10-19 13:01:19" itemprop="dateModified" datetime="2020-10-19T13:01:19+08:00">2020-10-19</time>
+      </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2018/06/04/raft/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2018/06/04/raft/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>好久没有更新博客了，最近研究了Raft 协议，谈谈自己对 Raft 协议的理解。希望这篇文章能够帮助大家理解 <a target="_blank" rel="noopener" href="https://ramcloud.atlassian.net/wiki/download/attachments/6586375/raft.pdf">Raft 论文</a>。</p>
+<a id="more"></a>
+<h2 id="Raft-是什么"><a href="#Raft-是什么" class="headerlink" title="Raft 是什么"></a>Raft 是什么</h2><p>Raft 是一种分布式系统的一致性算法。</p>
+<p>在分布式系统中，我们需要让一组机器作为一个整体向外界提供服务。由于在实际的条件下，我们认为每台机器都是不100%可靠的，随时都可能发生宕机。每台机器之间的通信也不是可靠的，可能发生通信的阻塞、丢失、重试。所以需要某些算法来保证在大多数机器都正常的情况下向外提供可靠的服务。</p>
+<p>在 Raft提出之前，Paxos 已经被提出，但是 Paxos 相当复杂。Raft 的目标就是提出一种易于理解的分布式一致性算法。</p>
+<p>在了解 Raft 之前需要了解一下什么状态机:</p>
+<p>论文指出，Raft 是一种用来管理日志复制的一致性算法。所以我们就要先了解一下。什么是日志复制状态机。我们思考一个问题。如果你要与你的小伙伴分享一个很复杂的操作及计算。一般来说你有两种做法：<br>第一种:你自己负责计算，经过一段时间的计算，算出结果后，直接把计算结果告诉你的小伙伴。<br>第二种:你把每一个操作的步骤都告诉你的伙伴，告诉他怎么做，由你的伙伴自己计算出结果。</p>
+<p>第二种方式，就是复制状态机的工作原理。复制状态机是通过复制日志来实现的。每一台服务器保存着一份日志，日志中包含一系列的命令，状态机会按顺序执行这些命令。因为每一台计算机的状态机都是确定的，所以每个状态机的状态都是相同的，执行的命令是相同的，最后的执行结果也就是一样的了。</p>
+<p>在实际中这种有很多类似的应用比如 mysql 的主从同步就是通过 binlog 进行同步。</p>
+<p>在现实生活中，如何有效的组织多人进行协助，最自然的想法就是选举一个领导，交由领导极大的权威，就能极大的提升整个团队工作效率。</p>
+<p>下面就谈谈我对 Raft 算法的理解。</p>
+<h2 id="基本安全保证"><a href="#基本安全保证" class="headerlink" title="基本安全保证"></a>基本安全保证</h2><p>为了保证过程正确性，Raft需要保证以下的性质时刻为真：</p>
+<ul>
+<li><p>选举安全原则：<br>同一届任期内至多只能有一个领导人。</p>
+</li>
+<li><p>领导人只加原则：<br>领导人的日志只能增加，不能重写或者删除。</p>
+</li>
+<li><p>日志匹配原则：<br>如果两个日志具有相同的任期和索引，则这两段日志在[0,索引]之间的日志完全相同。</p>
+</li>
+<li><p>领导人完全原则：<br>如果一条日志被提交，那么后续的任意任期的领导人都会有这条日志。</p>
+</li>
+<li><p>状态机安全原则：<br>如果一个服务器已经将给定索引位置的日志条目应用到状态机中，则所有其他服务器不会在该索引位置应用不同的条目。</p>
+</li>
+</ul>
+<h2 id="选取领导者"><a href="#选取领导者" class="headerlink" title="选取领导者"></a>选取领导者</h2><p>所以 Raft 算法成立的最重要的前提之一就是选举。</p>
+<ul>
+<li>Raft 由多个节点组成。</li>
+<li>强领导者， 整个 Raft 在同一时间，只有一个领导者，日志有领导者负责分发和同步。</li>
+<li>领导选举， 领导是由民主选举产生的，集群中多数节点投票通过就能成为主。</li>
+</ul>
+<p>对于在集群中的节点。在任意时间中，都有可能处于以下三种状态之一：</p>
+<ul>
+<li>跟随者</li>
+<li>候选人</li>
+<li>领导人</li>
+</ul>
+<p>每个领导人都有一个任期限制。每一届任期的开始阶段，都是选举。如果选举出了领导者就由该领导人负责领导集群。如果没有选举出领导，就会进入下一次选举。直到选举出领导者为止。</p>
+<p>角色之间的转换：</p>
+<p><img src="https://img.xilidou.com/img/raft_role.png" alt="role"></p>
+<p>领导者会周期性的向每台机器发送心跳，确保自己的领导地位。</p>
+<p>跟随者在长时间没有收到领导人的心跳，就会发起投票成为候选人，同时任期 + 1，如果获得超过半数的支持，就升任为领导。</p>
+<p>如果候选人，在发起投票的时候，发现集群里面有领导人的时候，就会重新成为追随者。</p>
+<p>如果候选人，发起投票后，一定时间里面没有收到超过半数的反馈，就会再次发起投票。</p>
+<p>如果领导者发现在集群中发现存在下一任期的领导者，就会变为追随者。</p>
+<h2 id="日志同步"><a href="#日志同步" class="headerlink" title="日志同步"></a>日志同步</h2><p>在选举出领导人以后，就开始处理客户端的日志。</p>
+<p>领导者在收到客户端的请求，每个请求包含一个操作的命令。领导者会将命令记录到自己的日志中，并向自己的追随者发起同步的请求，要求自己的追随者复制这个命令。</p>
+<p>一旦这个命令被大多数的追随者保存了。领导者就认为这个状态已经处于提交（commited）的状态。同时告知客户端，命令已经被提交。如果这个时候，追随者发生了崩溃或者延时。领导者会一直尝试重试，直到追随者接受命令，并存储到自己的日志中。这个过程一直持续到所有的追随者最终存储了所有的日志条目。</p>
+<p>作为 Raft 的节点需要保证如下性质。</p>
+<ul>
+<li>如果在不同日志中的两个条目有着相同的索引和任期号，则它们所存储的命令是相同的。</li>
+<li>如果在不同日志中的两个条目有着相同的索引和任期号，则它们之间的所有条目都是完全一样的。</li>
+</ul>
+<p>有了如上性质的保证。如果在某些情况下，发生了追随者的日志与领导者不同步的情况。（包括的情况，就可能是丢失日志，或者保存了领导者没有的日志，或者两兼有），在 Raft 算法中，领导人通过强制追随者们复制它的日志来处理日志的不一致。这就意味着，在追随者上的冲突日志会被领导者的日志覆盖。</p>
+<p>为了使得追随者的日志同自己的一致，领导人需要找到追随者同它的日志一致的地方，然后删除追随者在该位置之后的条目，然后将自己在该位置之后的条目发送给追随者。</p>
+<h2 id="安全分析"><a href="#安全分析" class="headerlink" title="安全分析"></a>安全分析</h2><p>需要分析在各种情况下，每个角色发生宕机，数据的安全性。</p>
+<h3 id="选举限制"><a href="#选举限制" class="headerlink" title="选举限制"></a>选举限制</h3><p>Raft 保证自己的日志，永远由领导者向追随者流动。也就是说领导者永远不会删改自己的日志，只能向上增加日志。为了达成这个限制，Raft 使用投票的方式来阻止没有包含全部日志条目的服务器赢得选举。</p>
+<p>当一个候选人发起投票的时候，需要告诉大家，自己最新的日志。其他节点在投票的时候，要保证自己的日志不能比候选人的新，否则就拒绝投票。通过这个限制就保证了获取多数票的领导者的日志，至少比大多数人要新。</p>
+<p>任期越大，日志越长，越容易成为领导者。</p>
+<h3 id="提交之前任期的日志条目"><a href="#提交之前任期的日志条目" class="headerlink" title="提交之前任期的日志条目"></a>提交之前任期的日志条目</h3><p><img src="https://img.xilidou.com/img/raft_error.png" alt="erro"></p>
+<p><del>这个在论文中比较难以理解。我看到这一节的时候也是读了好几遍才理解论文的意思。实际上作者表达的意思是图 （d）是正确的，而（e）是错误的。</del></p>
+<p><del>因为 2 号日志没有commited，但是由于一系列操作，造成了 2 号日志没有提交，但是高任期的leader 却认为 2 号日志被提交了。</del></p>
+<p>与知乎网友讨论发现这个地方还是理解有误，这个图后来作者换了一个更容易理解的图：</p>
+<p><img src="https://img.xilidou.com/img/raft2.jpg" alt="error2"></p>
+<p>应该是说，如果高term的leader，可以操作低任期的 log 的话，会造成 d 和 e 情况错误。且 d 造成了 2 号日志的丢失。所以加上限制以后，就不会出现这种问题了。</p>
+<p>为了解决这个问题。Raft 限制，只有当前任期的 leader 可以决定一条日志是否 commited，而不能由高任期的 leader 通过计算某条日志（例子中的 2号日志）超过半数节点持有，就确定日志被commited。</p>
+<p>换句话说，就是 Raft 限制每个leader 只能确定自己任期内的日志是否commited。而不能由高任期的 leader确定。</p>
+<h2 id="追随者和候选人崩溃"><a href="#追随者和候选人崩溃" class="headerlink" title="追随者和候选人崩溃"></a>追随者和候选人崩溃</h2><p>由于 Raft 是一个强领导的，少数服从多数的系统。上面花了了很多的篇幅讨论 leader 奔溃后 Raft 协议是如何保证准确性和安全性的。如果追随者或者候选人挂了，就比较简单了。</p>
+<p>如果候选人崩溃，一段时间以后，某个节点会出发超时，重新发起选举，一切就回复正常了。</p>
+<p>如果一个追随者崩溃，会被 leader 感知。 leader 会一直重试，直到追随者恢复，并同步所有日志。</p>
+<h2 id="系统的扩容"><a href="#系统的扩容" class="headerlink" title="系统的扩容"></a>系统的扩容</h2><p>分布式系统一大优势就是能够快速扩容。</p>
+<p>Raft 为了保证扩容的安全性，采用了两段two-phase）方法。</p>
+<p>在C<sub>old</sub> 和 C<sub>new</sub> 之间存在一个中间态， C<sub>old,new</sub> 的状态。防止刚开始扩容的时候，新的一组机器数量大于老集群数量，就有可能在新机器中自发投票选举出一个 leader，造成集群中有两个leader形成脑裂。</p>
+<ul>
+<li>日志条目被复制给集群中新、老配置的所有服务器。</li>
+<li>新、老配置的服务器都能成为领导人。</li>
+<li>需要分别在两种配置上获得大多数的支持才能达成一致（针对选举和提交）</li>
+</ul>
+<p>需要解决三个问题：</p>
+<ul>
+<li>为了不拖慢整个集群相应速度，可以不给新加入的节点投票权。知道日志追齐以后再开放投票权力</li>
+<li>如果扩容以后，老的 leader 属于被踢出的节点，老 leader 不会立即下线，而是继续工作，直到 C<sub>new</sub> 被提交。这个时候 leader 自己只负责管理集群而自己不追加日志。</li>
+<li>将要被被删除的节点，不会收到领导的心跳，就会不停的认为自己超时，会不断的成为候选人，并不断的发起投票。造成集群的 leader 不断的退位，然后再次产生 leader。造成集群的响应能力降低。为了避免这个问题，当服务器确认当前领导人存在时，服务器会忽略请求投票。每个服务器在开始一次选举之前，至少等待一个最小选举超时时间。</li>
+</ul>
+<h2 id="日志的压缩"><a href="#日志的压缩" class="headerlink" title="日志的压缩"></a>日志的压缩</h2><p>日志的压缩比较容易理解，随着集群的使用，日志的数量越来越大，就会降低集群的性能，同时占用大量的存储空间。所以需要定期对日志进行压缩。快照是最简单的压缩方法。在快照系统中，整个系统的状态都以快照的形式写入到稳定的持久化存储中，然后到那个时间点之前的日志全部丢弃。</p>
+<h2 id="客户端交互"><a href="#客户端交互" class="headerlink" title="客户端交互"></a>客户端交互</h2><p>整个 Raft 协议中，客户端只与 leader 进行交互。</p>
+<p>客户端与集群通信的时候，首先随便与集群中的任意一个节点交互，询问 leader 是谁。</p>
+<p>是客户端对于每一条指令都赋予一个唯一的序列号。然后，状态机跟踪每条指令最新的序列号和相应的响应。如果接收到一条指令，它的序列号已经被执行了，那么就立即返回结果，而不重新执行指令。这样保证交互的命令是幂等的。如果一条命令被重复提交，并不会造成状态机的错误。</p>
+<p>对于读取的命令来说，如领导人已经被废黜，而自己不知道。就容易造成客户端读取到脏数据。最新的数据由别的 leader 维护了。为了避免这个问题：</p>
+<ul>
+<li>领导人必须拥有最新的数据，这一点是必然的。Raft 天然保证这个特性。</li>
+<li>领导人在访问数据之前需要发送一次心跳，保证自己的领导地位。</li>
+</ul>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://raft.github.io/">Raft 首页</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/maemual/raft-zh_cn">Raft 中文翻译</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/wenweihu86/raft-java.git">Raft java 实现</a></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F/" rel="tag"># 分布式</a>
+              <a href="/tags/raft/" rel="tag"># raft</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2018/04/01/dubbo-start/" rel="prev" title="dubbo 源码学习（一）开篇">
+                  <i class="fa fa-chevron-left"></i> dubbo 源码学习（一）开篇
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2018/07/09/hump-api/" rel="next" title="撸码的福音--变量名生成器的实现">
+                  撸码的福音--变量名生成器的实现 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+      
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="noopener" target="_blank">京ICP备17065467号-1 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Zhengxin Diao</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/@next-theme/pjax@0.4.0/pjax.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+  <script>
+var pjax = new Pjax({
+  selectors: [
+    'head title',
+    '.page-configurations',
+    '.main-inner',
+    '.post-toc-wrap',
+    '.languages',
+    '.pjax'
+  ],
+  analytics: false,
+  cacheBust: false,
+  scrollRestoration: false,
+  scrollTo: !CONFIG.bookmark.enable
+});
+
+document.addEventListener('pjax:success', () => {
+  pjax.executeScripts(document.querySelectorAll('script[data-pjax], .pjax script'));
+  NexT.boot.refresh();
+  // Define Motion Sequence & Bootstrap Motion.
+  if (CONFIG.motion.enable) {
+    NexT.motion.integrator
+      .init()
+      .add(NexT.motion.middleWares.subMenu)
+      .add(NexT.motion.middleWares.postList)
+      .bootstrap();
+  }
+  const hasTOC = document.querySelector('.post-toc');
+  document.querySelector('.sidebar-inner').classList.toggle('sidebar-nav-active', hasTOC);
+  document.querySelector(hasTOC ? '.sidebar-nav-toc' : '.sidebar-nav-overview').click();
+  NexT.utils.updateSidebarPosition();
+});
+</script>
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+
+
+
+    <div class="pjax">
+  
+
+  
+
+<script>
+NexT.utils.loadComments('#valine-comments', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/valine@1.4.14/dist/Valine.min.js', () => {
+    new Valine(Object.assign({"enable":true,"appId":"U1CnWFNMjPMQtQ26DeVu6kXh-gzGzoHsz","appKey":"8YqgRu5iJFBdqRSe945Bu9le# Your leancloud application appkey","serverURLs":null,"placeholder":"做了一点微小的工作","avatar":"mm","meta":["nick","mail","link"],"pageSize":10,"lang":null,"visitor":false,"comment_count":true,"recordIP":false,"enableQQ":false,"requiredFields":[]}, {
+      el: '#valine-comments',
+      path: "/2018/06/04/raft/",
+      serverURLs: "https://u1cnwfnm.api.lncldglobal.com"
+    }));
+  }, window.Valine);
+});
+</script>
+
+    </div>
+</body>
+</html>

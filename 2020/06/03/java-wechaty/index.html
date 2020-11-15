@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.2.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.1/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"xilidou.com","root":"/","images":"/images","scheme":"Pisces","version":"8.0.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="终于有一个 Java 版的微信机器人了。 公众号很久没有更新了。主要两个原因，换了工作之后，第一，要花更多的时间去了解和学习新的业务。第二，我最近把几乎所有的业余时间都来写这个 Java 版的微信机器人了。  Wechaty 是什么官网的描述是：  A Conversational AI RPA SDK for Chatbot  其实就是一个能够快速构建聊天机器人的开源 SDK。最早的时候，Wec">
+<meta property="og:type" content="article">
+<meta property="og:title" content="终于有一个 Java 可以用的微信机器人了">
+<meta property="og:url" content="https://xilidou.com/2020/06/03/java-wechaty/index.html">
+<meta property="og:site_name" content="犀利豆的博客">
+<meta property="og:description" content="终于有一个 Java 版的微信机器人了。 公众号很久没有更新了。主要两个原因，换了工作之后，第一，要花更多的时间去了解和学习新的业务。第二，我最近把几乎所有的业余时间都来写这个 Java 版的微信机器人了。  Wechaty 是什么官网的描述是：  A Conversational AI RPA SDK for Chatbot  其实就是一个能够快速构建聊天机器人的开源 SDK。最早的时候，Wec">
+<meta property="og:locale">
+<meta property="og:image" content="https://img.xilidou.com/img/java-wechaty.png">
+<meta property="article:published_time" content="2020-06-02T16:39:17.000Z">
+<meta property="article:modified_time" content="2020-10-19T05:13:18.000Z">
+<meta property="article:author" content="Zhengxin Diao">
+<meta property="article:tag" content="java">
+<meta property="article:tag" content="线程池">
+<meta property="article:tag" content="多线程">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://img.xilidou.com/img/java-wechaty.png">
+
+
+<link rel="canonical" href="https://xilidou.com/2020/06/03/java-wechaty/">
+
+
+<script data-pjax class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh'
+  };
+</script>
+
+  <title>终于有一个 Java 可以用的微信机器人了 | 犀利豆的博客</title>
+  
+
+
+  <script data-pjax>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?5d32532da741f4430197fd778ea752f1";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  <script data-pjax>
+    !function(e,t,n,g,i){e[i]=e[i]||function(){(e[i].q=e[i].q||[]).push(arguments)},n=t.createElement("script"),tag=t.getElementsByTagName("script")[0],n.async=1,n.src=('https:'==document.location.protocol?'https://':'http://')+g,tag.parentNode.insertBefore(n,tag)}(window,document,"script","assets.growingio.com/2.1/gio.js","gio");
+    gio('init', 'UA-35317601-2', {});
+    gio('send');
+  </script>
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">犀利豆的博客</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">高质量的技术博客</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-java">
+
+    <a href="/tags/java/" rel="section"><i class="fa fa-th fa-fw"></i>java</a>
+
+  </li>
+        <li class="menu-item menu-item-redis">
+
+    <a href="/tags/redis/" rel="section"><i class="fa fa-th fa-fw"></i>redis</a>
+
+  </li>
+        <li class="menu-item menu-item-dubbo">
+
+    <a href="/tags/dubbo/" rel="section"><i class="fa fa-th fa-fw"></i>dubbo</a>
+
+  </li>
+        <li class="menu-item menu-item-tools">
+
+    <a href="/tags/tools" rel="section"><i class="fa fa-th fa-fw"></i>tools</a>
+
+  </li>
+        <li class="menu-item menu-item-我的朋友们">
+
+    <a href="/friends" rel="section"><i class="fa fa-user fa-fw"></i>我的朋友们</a>
+
+  </li>
+        <li class="menu-item menu-item-关于我">
+
+    <a href="/aboutme" rel="section"><i class="fa fa-user fa-fw"></i>关于我</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <section class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Wechaty-%E6%98%AF%E4%BB%80%E4%B9%88"><span class="nav-number">1.</span> <span class="nav-text">Wechaty 是什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%8E-Wechaty-%E7%BB%93%E7%BC%98"><span class="nav-number">2.</span> <span class="nav-text">与 Wechaty 结缘</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Java-%E7%89%88%E7%9A%84-Wechaty"><span class="nav-number">3.</span> <span class="nav-text">Java 版的 Wechaty</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Java-vs-Kotlin"><span class="nav-number">3.1.</span> <span class="nav-text">Java vs Kotlin</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8"><span class="nav-number">3.2.</span> <span class="nav-text">事件驱动</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84"><span class="nav-number">3.3.</span> <span class="nav-text">整体架构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A5%BD%E7%94%A8%E4%B9%88"><span class="nav-number">3.4.</span> <span class="nav-text">好用么</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%8E%B0%E5%9C%A8%E8%BE%BE%E5%88%B0%E4%BB%80%E4%B9%88%E7%A8%8B%E5%BA%A6%E4%BA%86%EF%BC%9F"><span class="nav-number">3.5.</span> <span class="nav-text">现在达到什么程度了？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%8E-Java-wechaty-%E4%B8%AD%E8%83%BD%E5%BE%97%E5%88%B0%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="nav-number">3.6.</span> <span class="nav-text">从 Java-wechaty 中能得到什么？</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%9F%E5%BE%85%E4%BD%A0%E7%9A%84%E5%8A%A0%E5%85%A5"><span class="nav-number">4.</span> <span class="nav-text">期待你的加入</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%8E%E8%AE%B0"><span class="nav-number">5.</span> <span class="nav-text">后记</span></a></li></ol></div>
+        </section>
+        <!--/noindex-->
+
+        <section class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Zhengxin Diao</p>
+  <div class="site-description" itemprop="description">北邮本科，University of Leicester EE 研究生，Java后端开发，目前就职阿里</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">41</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">73</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/diaozxin007" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;diaozxin007" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:diaozxin@163.com" title="E-Mail → mailto:diaozxin@163.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/diao-zheng-xin/activities" title="zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;diao-zheng-xin&#x2F;activities" rel="noopener" target="_blank"><i class="zhihu fa-fw"></i>zhihu</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml"><i class="rs fa-fw"></i>RSS</a>
+      </span>
+  </div>
+
+
+
+        </section>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://xilidou.com/2020/06/03/java-wechaty/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Zhengxin Diao">
+      <meta itemprop="description" content="北邮本科，University of Leicester EE 研究生，Java后端开发，目前就职阿里">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="犀利豆的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          终于有一个 Java 可以用的微信机器人了
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2020-06-03 00:39:17" itemprop="dateCreated datePublished" datetime="2020-06-03T00:39:17+08:00">2020-06-03</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">Edited on</span>
+        <time title="Modified: 2020-10-19 13:13:18" itemprop="dateModified" datetime="2020-10-19T13:13:18+08:00">2020-10-19</time>
+      </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2020/06/03/java-wechaty/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2020/06/03/java-wechaty/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>终于有一个 Java 版的微信机器人了。</p>
+<p>公众号很久没有更新了。主要两个原因，换了工作之后，第一，要花更多的时间去了解和学习新的业务。第二，我最近把几乎所有的业余时间都来写这个 Java 版的微信机器人了。</p>
+<p><img src="https://img.xilidou.com/img/java-wechaty.png" alt="java-wechaty"></p>
+<h2 id="Wechaty-是什么"><a href="#Wechaty-是什么" class="headerlink" title="Wechaty 是什么"></a>Wechaty 是什么</h2><p>官网的描述是：</p>
+<ul>
+<li>A Conversational AI RPA SDK for Chatbot</li>
+</ul>
+<p>其实就是一个能够快速构建聊天机器人的开源 SDK。最早的时候，Wechaty 只是一个基于服务于微信工具库，现在逐渐的发展到可以对接世面上的主流聊天软件包括不限于：微信，企业微信，钉钉，Line 等。</p>
+<p>编程语言也由原来的单一语言（TypeScript） 发展到，Java，Scala，Python，Go 等多语言实现的工具库了，同时社区生态还在不断的壮大。</p>
+<p>Github 地址：<a target="_blank" rel="noopener" href="https://github.com/wechaty/wechaty">https://github.com/wechaty/wechaty</a> 目前已经有 7.9k 的 star 了。</p>
+<a id="more"></a>
+
+<h2 id="与-Wechaty-结缘"><a href="#与-Wechaty-结缘" class="headerlink" title="与 Wechaty 结缘"></a>与 Wechaty 结缘</h2><p>之前的工作，老板有一个要求，是就每天下班后，发一封邮件日报简单描述一下今天工作进展。如果忘记发日报，第二天就负责整理 全组人的日报。作为一个健忘的人，忘记发日报简直就是家常便饭。</p>
+<p>于是就考虑需要一个机制：</p>
+<ul>
+<li>每天提醒我发日报</li>
+<li>动作尽可能简单，且自动化。</li>
+</ul>
+<p>当时就想能不能在微信上有一个机器人，每天定时提醒我发日报，而且只要回复这个机器人，他就能够把我回复的消息，按照固定模板生成日报并发送给老板。这样既不会忘记，也能简单自动化的完成这个工作。</p>
+<p>一顿 Google 还真找到了 Wechaty 这个工具。尝试写了一个日报机器人满足了我的需求。于是再接再厉，又写了一个提醒女朋友吃饭的工具，但是因为不熟悉 TypeScript。写出的机器人没法停止，变成了一个信息轰炸机，差点被拉黑。<a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s?__biz=MzU2NTQ1NTAxNQ==&mid=2247483767&idx=1&sn=ca72401e514dded0c84b1220f887cdf4&chksm=fcba30bfcbcdb9a98e8c455357b38fda66f7af203ce09101597f23ae6a5d1eb133c48c7f63d3&token=656593281&lang=zh_CN#rd">居然有人能忘记吃饭？写个微信机器人提醒他</a></p>
+<p>就是因为这篇文章，还结识了 Wechaty 的作者李佳芮。现在她的公司已经估值很多个 0 了。</p>
+<p>由于我的主要工作语言是 Java ，对 TypeScript 还是了解不多，就暂时放下了。</p>
+<h2 id="Java-版的-Wechaty"><a href="#Java-版的-Wechaty" class="headerlink" title="Java 版的 Wechaty"></a>Java 版的 Wechaty</h2><p>在 Wechaty 的某个版本后，开始支持 GRPC 作为传输协议。这个时候我觉得多语言开发的环境就比较成熟了。于是我就开始尝试写一个 Java 版的 wechaty。</p>
+<h3 id="Java-vs-Kotlin"><a href="#Java-vs-Kotlin" class="headerlink" title="Java vs Kotlin"></a>Java vs Kotlin</h3><p>Wechaty 使用 TypeScripe 开发，在移植的过程中，发现要实现 TS 版对应的功能，Java 所需要的模板代码就太多了，开发起来效率不够快。于是就考虑可不可以使用 Kotlin 来构建 Java-wechaty sdk。</p>
+<p>Kotlin 有以下特性感觉比较适合 Wechaty 的开发：</p>
+<ul>
+<li>Java 和 Kotlin 之间可以无障碍的互相操作</li>
+<li>在 Kotlin 中，函数也是第一公民，可以脱离类的存在，这一点在移植 TS 代码的时候优势就比较明显了。</li>
+<li>空指针安全，之前写 Java 的时候，受够了一步一检查。Kotlin 在语言层面就解决了空指针安全的问题。写起来有效的减少心智负担。</li>
+<li>Kotlin 是务实的，更有表现力的语言。语法更加接近 TS 和 GO，相对 Java 来说更加简洁。</li>
+</ul>
+<h3 id="事件驱动"><a href="#事件驱动" class="headerlink" title="事件驱动"></a>事件驱动</h3><p>TS 版的 Wechaty 是基于 Nodejs 开发的，一个典型的事件驱动的架构。在开发初期我就自然想到了使用 <code>Vertx</code> 框架来开发。但是开发一段时间后发现，其实 <code>Vertx</code> 是一个事件驱动的网络框架。主要解决的还是网络相关的问题，放到 Java-wechaty 中还是太重了。</p>
+<p>于是移除了代码中的 Vertx 框架，自己参考 Nodejs 中的 EventEmitter 实现了 Kotlin 版的事件驱动组件。</p>
+<h3 id="整体架构"><a href="#整体架构" class="headerlink" title="整体架构"></a>整体架构</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">  +--------------------------+ +--------------------------+</span><br><span class="line">  |                          | |                          |</span><br><span class="line">  |   Wechaty (TypeScript)   | |     Wechaty (Java)       |</span><br><span class="line">  |                          | |                          |</span><br><span class="line">  +--------------------------+ +--------------------------+</span><br><span class="line"></span><br><span class="line">  +-------------------------------------------------------+</span><br><span class="line">  |                 Wechaty Puppet Hostie                 |</span><br><span class="line">  |                                                       |</span><br><span class="line">  |                (wechaty-puppet-hostie)                |</span><br><span class="line">  +-------------------------------------------------------+</span><br><span class="line"></span><br><span class="line">+---------------------  @chatie&#x2F;grpc  ----------------------+</span><br><span class="line"></span><br><span class="line">  +-------------------------------------------------------+</span><br><span class="line">  |                Wechaty Puppet Abstract                |</span><br><span class="line">  |                                                       |</span><br><span class="line">  |                   (wechaty-puppet)                    |</span><br><span class="line">  +-------------------------------------------------------+</span><br><span class="line"></span><br><span class="line">  +--------------------------+ +--------------------------+</span><br><span class="line">  |      Pad Protocol        | |      Web Protocol        |</span><br><span class="line">  |                          | |                          |</span><br><span class="line">  | wechaty-puppet-padplus   | |(wechaty-puppet-puppeteer)|</span><br><span class="line">  +--------------------------+ +--------------------------+</span><br><span class="line">  +--------------------------+ +--------------------------+</span><br><span class="line">  |    Windows Protocol      | |       Mac Protocol       |</span><br><span class="line">  |                          | |                          |</span><br><span class="line">  | (wechaty-puppet-windows) | | (wechaty-puppet-macpro)  |</span><br><span class="line">  +--------------------------+ +--------------------------+</span><br></pre></td></tr></table></figure>
+
+<p>通过这个图可看到，Wechaty 的结构设计还比清晰。利用 Puppet 的架构，将真正的通信协议和具体的 IM 软件进行了隔离。基于这一点不同的语言基于 Puppet 的协议就可以进行多语言开发。</p>
+<h3 id="好用么"><a href="#好用么" class="headerlink" title="好用么"></a>好用么</h3><p>感谢 Wechaty 前期良好的 API 设计几行代码就可以开发自己聊天机器人：</p>
+<p>Demo 1：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Bot</span></span>&#123;</span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String args[])</span></span>&#123;</span><br><span class="line">    Wechaty bot = Wechaty.instance()</span><br><span class="line">      .onScan((qrcode, statusScanStatus, data) -&gt; System.out.println(QrcodeUtils.getQr(qrcode)))</span><br><span class="line">      .onLogin(user -&gt; System.out.println(<span class="string">&quot;User logined :&quot;</span> + user))</span><br><span class="line">      .onMessage(message -&gt; System.out.println(<span class="string">&quot;Message:&quot;</span> + message))</span><br><span class="line">      .start(<span class="keyword">true</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个 Demo 6 行代码，就实现了机器人的扫码登录，接受消息的功能。同时现在 Java-wechaty 还支持可插拔的插件。利用插件，可以更简单的构建机器人。</p>
+<p>Demo 2：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Bot</span></span>&#123;</span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String args[])</span></span>&#123;</span><br><span class="line">    Wechaty bot = Wechaty.instance()</span><br><span class="line">            .use(</span><br><span class="line">                WechatyPlugins.ScanPlugin(),</span><br><span class="line">                WechatyPlugins.DingDongPlugin(<span class="keyword">null</span>)</span><br><span class="line">            )</span><br><span class="line">            .start(<span class="keyword">true</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>随着插件的原来越丰富，可能以后，用户只需要组合各种插件，就能达成自己的需求，尽量的做到低代码开发。</p>
+<h3 id="现在达到什么程度了？"><a href="#现在达到什么程度了？" class="headerlink" title="现在达到什么程度了？"></a>现在达到什么程度了？</h3><p>目前 Java-wechaty 已经完成了 TS 版的功能的移植。</p>
+<p>实现了基础的的聊天，好友管理，群管理功能。接下来的开发就会集中在 API 的打磨，稳定性的提升。同时也期待你的加入为 Java-wechaty 贡献代码。</p>
+<h3 id="从-Java-wechaty-中能得到什么？"><a href="#从-Java-wechaty-中能得到什么？" class="headerlink" title="从 Java-wechaty 中能得到什么？"></a>从 Java-wechaty 中能得到什么？</h3><ol>
+<li>真正的参与开源代码的贡献。</li>
+<li>在 Maven 中央库，发布了自己的 Jar 包。</li>
+<li>认识了各种各样小伙伴，包括写了 25 年程序的天使投资人 @Huan。</li>
+<li>在写 Java-wechaty 的时候，不断的参考伙伴们的 TypeScript，Go，Python 代码，从实际的角度去审视各种编程语言的特性。探寻语言各个特性设计的初衷。</li>
+</ol>
+<h2 id="期待你的加入"><a href="#期待你的加入" class="headerlink" title="期待你的加入"></a>期待你的加入</h2><p>Wechtay 社区加入了由 <strong>中科院软件所</strong> 与 <strong>openEuler 社区</strong> 共同举办的一项面向高校学生的暑期活动《开源软件供应链点亮计划-暑期2020》。</p>
+<p>详情见： <a target="_blank" rel="noopener" href="https://github.com/wechaty/summer-of-code">https://github.com/wechaty/summer-of-code</a></p>
+<p>Wechaty 给学生们提供了很多有意思的题目，比如：</p>
+<ol>
+<li>利用 AI 技术，开发一个 AI 斗图机器人</li>
+<li>利用 Wechaty 的插件技术，开发一个“每日一句”插件，替你向妹子嘘寒问暖的”撩妹“机器人</li>
+<li>还有偏向工程的，代码移植工作，让学生真正的参与到开源项目其中</li>
+</ol>
+<p>开发语言涉及，TypeScript，Go，Java，Kotlin，Python 甚至还有 Scala，总有一个适合你。</p>
+<p>希望看到这里的你，可以把篇文章，转发给学习计算机，或者对编程感兴趣的学生朋友，期待他们加入。</p>
+<h2 id="后记"><a href="#后记" class="headerlink" title="后记"></a>后记</h2><p>Java-wechaty <a target="_blank" rel="noopener" href="https://github.com/wechaty/java-wechaty">项目地址</a>。 加入我们你也可以六行代码写一个微信机器人。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/java/" rel="tag"># java</a>
+              <a href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" rel="tag"># 线程池</a>
+              <a href="/tags/%E5%A4%9A%E7%BA%BF%E7%A8%8B/" rel="tag"># 多线程</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/04/12/vertx-dingding/" rel="prev" title="Vertx入门到实战—实现钉钉机器人内网穿透代理">
+                  <i class="fa fa-chevron-left"></i> Vertx入门到实战—实现钉钉机器人内网穿透代理
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+      
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="noopener" target="_blank">京ICP备17065467号-1 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Zhengxin Diao</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/@next-theme/pjax@0.4.0/pjax.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+  <script>
+var pjax = new Pjax({
+  selectors: [
+    'head title',
+    '.page-configurations',
+    '.main-inner',
+    '.post-toc-wrap',
+    '.languages',
+    '.pjax'
+  ],
+  analytics: false,
+  cacheBust: false,
+  scrollRestoration: false,
+  scrollTo: !CONFIG.bookmark.enable
+});
+
+document.addEventListener('pjax:success', () => {
+  pjax.executeScripts(document.querySelectorAll('script[data-pjax], .pjax script'));
+  NexT.boot.refresh();
+  // Define Motion Sequence & Bootstrap Motion.
+  if (CONFIG.motion.enable) {
+    NexT.motion.integrator
+      .init()
+      .add(NexT.motion.middleWares.subMenu)
+      .add(NexT.motion.middleWares.postList)
+      .bootstrap();
+  }
+  const hasTOC = document.querySelector('.post-toc');
+  document.querySelector('.sidebar-inner').classList.toggle('sidebar-nav-active', hasTOC);
+  document.querySelector(hasTOC ? '.sidebar-nav-toc' : '.sidebar-nav-overview').click();
+  NexT.utils.updateSidebarPosition();
+});
+</script>
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+
+
+
+    <div class="pjax">
+  
+
+  
+
+<script>
+NexT.utils.loadComments('#valine-comments', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/valine@1.4.14/dist/Valine.min.js', () => {
+    new Valine(Object.assign({"enable":true,"appId":"U1CnWFNMjPMQtQ26DeVu6kXh-gzGzoHsz","appKey":"8YqgRu5iJFBdqRSe945Bu9le# Your leancloud application appkey","serverURLs":null,"placeholder":"做了一点微小的工作","avatar":"mm","meta":["nick","mail","link"],"pageSize":10,"lang":null,"visitor":false,"comment_count":true,"recordIP":false,"enableQQ":false,"requiredFields":[]}, {
+      el: '#valine-comments',
+      path: "/2020/06/03/java-wechaty/",
+      serverURLs: "https://u1cnwfnm.api.lncldglobal.com"
+    }));
+  }, window.Valine);
+});
+</script>
+
+    </div>
+</body>
+</html>
