@@ -31,17 +31,17 @@
 <meta property="og:site_name" content="犀利豆的博客">
 <meta property="og:description" content="我们的业务系统使用了一段时间后，用户的角色类型越来越多，这时候不同类型的用户可以使用不同功能，看见不同数据的需求就变得越来越迫切。如何设计一个可扩展,且易于接入的权限系统.就显得相当重要了。结合之前我实现的的权限系统，今天就来和大家探讨一下我对权限系统的理解。 这篇文章会从权限系统业务设计，技术架构，关键代码几个方面，详细的阐述权限系统的实现。">
 <meta property="og:locale">
-<meta property="og:image" content="https:///images/alex-pudov-588871-unsplash%202.jpg?x-oss-process=image/resize,p_40">
-<meta property="og:image" content="https:///images/permissin-er.png">
-<meta property="og:image" content="https:///images/datepermission.png">
-<meta property="og:image" content="https:///images/jpa-filter.png">
+<meta property="og:image" content="https://xilidou.com/images/alex-pudov-588871-unsplash%202.jpg?x-oss-process=image/resize,p_40">
+<meta property="og:image" content="https://xilidou.com/images/permissin-er.png">
+<meta property="og:image" content="https://xilidou.com/images/datepermission.png">
+<meta property="og:image" content="https://xilidou.com/images/jpa-filter.png">
 <meta property="article:published_time" content="2019-05-11T13:23:41.000Z">
-<meta property="article:modified_time" content="2020-11-15T08:50:10.710Z">
+<meta property="article:modified_time" content="2020-11-15T09:03:29.775Z">
 <meta property="article:author" content="Zhengxin Diao">
 <meta property="article:tag" content="java">
 <meta property="article:tag" content="权限">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https:///images/alex-pudov-588871-unsplash%202.jpg?x-oss-process=image/resize,p_40">
+<meta name="twitter:image" content="https://xilidou.com/images/alex-pudov-588871-unsplash%202.jpg?x-oss-process=image/resize,p_40">
 
 
 <link rel="canonical" href="https://xilidou.com/2019/05/11/permisson/">
@@ -319,7 +319,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">Edited on</span>
-        <time title="Modified: 2020-11-15 16:50:10" itemprop="dateModified" datetime="2020-11-15T16:50:10+08:00">2020-11-15</time>
+        <time title="Modified: 2020-11-15 17:03:29" itemprop="dateModified" datetime="2020-11-15T17:03:29+08:00">2020-11-15</time>
       </span>
 
   
@@ -353,7 +353,7 @@
     
     
     <div class="post-body" itemprop="articleBody">
-        <p><img src="///images/alex-pudov-588871-unsplash%202.jpg?x-oss-process=image/resize,p_40" alt="keepout"></p>
+        <p><img src="/images/alex-pudov-588871-unsplash%202.jpg?x-oss-process=image/resize,p_40" alt="keepout"></p>
 <p>我们的业务系统使用了一段时间后，用户的角色类型越来越多，这时候不同类型的用户可以使用不同功能，看见不同数据的需求就变得越来越迫切。<br>如何设计一个可扩展,且易于接入的权限系统.就显得相当重要了。结合之前我实现的的权限系统，今天就来和大家探讨一下我对权限系统的理解。</p>
 <p>这篇文章会从权限系统业务设计，技术架构，关键代码几个方面，详细的阐述权限系统的实现。</p>
 <a id="more"></a>
@@ -390,7 +390,7 @@
 <p>涉及的 api 就可能包含了 <code>contract</code> 的 <code>get</code> 和 <code>patch</code> 两个 Restful 风格的接口。</p>
 <p>抽象出来就是：在权限系统中若干前端元素和后端 API 组成了一个功能。</p>
 <p>具体的关系，就是如下图：</p>
-<p><img src="///images/permissin-er.png" alt="permission-er"></p>
+<p><img src="/images/permissin-er.png" alt="permission-er"></p>
 <h3 id="数据权限-1"><a href="#数据权限-1" class="headerlink" title="数据权限"></a>数据权限</h3><p>具体每个系统的数据权限的实现有所不同，我们这里实现的数据权限是依赖于公司的组织架构实现的，所有涉及到的实体如下：</p>
 <ul>
 <li>用户</li>
@@ -408,7 +408,7 @@
 <li>用户能够看到该数据拥有者的数据</li>
 </ul>
 <p>具体的关系图如下：</p>
-<p><img src="///images/datepermission.png" alt="date-permission"></p>
+<p><img src="/images/datepermission.png" alt="date-permission"></p>
 <p>注意，实际上用户和数据拥有者都是同一个实体 User 表示，只是为了表述方便进行了区分。</p>
 <h2 id="实现的技术难点"><a href="#实现的技术难点" class="headerlink" title="实现的技术难点"></a>实现的技术难点</h2><h3 id="Mysql-中树的储存"><a href="#Mysql-中树的储存" class="headerlink" title="Mysql 中树的储存"></a>Mysql 中树的储存</h3><p>可以看出来，我们的功能和组织架构都是典型的树形结构。</p>
 <p>我们最常见的场景如下</p>
@@ -450,7 +450,7 @@
 
 <h3 id="利用-Hibrenate-特性实现数据权限"><a href="#利用-Hibrenate-特性实现数据权限" class="headerlink" title="利用 Hibrenate 特性实现数据权限"></a>利用 Hibrenate 特性实现数据权限</h3><p>通过上面的代码可以看出来，功能权限的实现，基本做到了没有侵入代码。对于数据权限的实现的原则还是尽量少的减少代码的入侵。</p>
 <p>我们默认代码使用 Java 经典的 Controller、Service、Dao 三层架构。 主要使用的技术 Spring Aop、Jpa 的 filter，基本的实现思路如下图：</p>
-<p><img src="///images/jpa-filter.png" alt="date permission"></p>
+<p><img src="/images/jpa-filter.png" alt="date permission"></p>
 <p>基本的思路如下：</p>
 <ol>
 <li>用户登录以后，获取用户的数据权限相关信息。</li>
