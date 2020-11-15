@@ -501,10 +501,10 @@ document.addEventListener('pjax:success', () => {
 <script>
 NexT.utils.loadComments('#valine-comments', () => {
   NexT.utils.getScript('//cdn.jsdelivr.net/npm/valine@1.4.14/dist/Valine.min.js', () => {
-    new Valine(Object.assign({"enable":true,"appId":"U1CnWFNMjPMQtQ26DeVu6kXh-gzGzoHsz","appKey":"8YqgRu5iJFBdqRSe945Bu9le","serverURLs":null,"placeholder":"做了一点微小的工作","avatar":"mm","meta":["nick","mail","link"],"pageSize":10,"lang":null,"visitor":false,"comment_count":true,"recordIP":false,"enableQQ":false,"requiredFields":[]}, {
+    new Valine(Object.assign({"enable":true,"appId":"U1CnWFNMjPMQtQ26DeVu6kXh-gzGzoHsz","appKey":"8YqgRu5iJFBdqRSe945Bu9le","serverURLs":"https://u1cnwfnm.lc-cn-n1-shared.com","placeholder":"做了一点微小的工作","avatar":"mm","meta":["nick","mail","link"],"pageSize":10,"lang":null,"visitor":false,"comment_count":true,"recordIP":false,"enableQQ":false,"requiredFields":[]}, {
       el: '#valine-comments',
       path: "/archives/2018/01/",
-      serverURLs: "https://u1cnwfnm.api.lncldglobal.com"
+      serverURLs: "https://u1cnwfnm.lc-cn-n1-shared.com"
     }));
   }, window.Valine);
 });
