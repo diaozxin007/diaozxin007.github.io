@@ -31,16 +31,16 @@
 <meta property="og:site_name" content="犀利豆的博客">
 <meta property="og:description" content="微服务已经是每个互联网开发者必须掌握的一项技术。而 RPC 框架，是构成微服务最重要的组成部分之一。趁最近有时间。又看了看 dubbo 的源码。dubbo 为了做到灵活和解耦，使用了大量的设计模式和 SPI机制，要看懂 dubbo 的代码也不太容易。 按照《徒手撸框架》系列文章的套路，我还是会极简的实现一个 RPC 框架。帮助大家理解 RPC 框架的原理。 广义的来讲一个完整的 RPC 包含了很">
 <meta property="og:locale">
-<meta property="og:image" content="https://img.xilidou.com/img/2019-04-25-022219.jpg">
-<meta property="og:image" content="https://img.xilidou.com/img/2019-04-25-22220.jpg">
-<meta property="og:image" content="https://img.xilidou.com/img/2019-04-25-022221.jpg">
+<meta property="og:image" content="https://xilidou.com/images/2019-04-25-022219.jpg">
+<meta property="og:image" content="https://xilidou.com/images/2019-04-25-22220.jpg">
+<meta property="og:image" content="https://xilidou.com/images/2019-04-25-022221.jpg">
 <meta property="article:published_time" content="2018-09-26T10:18:21.000Z">
-<meta property="article:modified_time" content="2020-10-19T05:01:19.000Z">
+<meta property="article:modified_time" content="2020-11-15T08:52:06.581Z">
 <meta property="article:author" content="Zhengxin Diao">
 <meta property="article:tag" content="java">
 <meta property="article:tag" content="rpc">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://img.xilidou.com/img/2019-04-25-022219.jpg">
+<meta name="twitter:image" content="https://xilidou.com/images/2019-04-25-022219.jpg">
 
 
 <link rel="canonical" href="https://xilidou.com/2018/09/26/dourpc-remoting/">
@@ -318,7 +318,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">Edited on</span>
-        <time title="Modified: 2020-10-19 13:01:19" itemprop="dateModified" datetime="2020-10-19T13:01:19+08:00">2020-10-19</time>
+        <time title="Modified: 2020-11-15 16:52:06" itemprop="dateModified" datetime="2020-11-15T16:52:06+08:00">2020-11-15</time>
       </span>
 
   
@@ -352,7 +352,7 @@
     
     
     <div class="post-body" itemprop="articleBody">
-        <p><img src="https://img.xilidou.com/img/2019-04-25-022219.jpg"></p>
+        <p><img src="/images/2019-04-25-022219.jpg"></p>
 <p>微服务已经是每个互联网开发者必须掌握的一项技术。而 RPC 框架，是构成微服务最重要的组成部分之一。趁最近有时间。又看了看 dubbo 的源码。dubbo 为了做到灵活和解耦，使用了大量的设计模式和 SPI机制，要看懂 dubbo 的代码也不太容易。</p>
 <p>按照《徒手撸框架》系列文章的套路，我还是会极简的实现一个 RPC 框架。帮助大家理解 RPC 框架的原理。</p>
 <p>广义的来讲一个完整的 RPC 包含了很多组件，包括服务发现，服务治理，远程调用，调用链分析，网关等等。我将会慢慢的实现这些功能，这篇文章主要先讲解的是 RPC 的基石，<strong>远程调用</strong> 的实现。</p>
@@ -361,7 +361,7 @@
 
 <h1 id="1-RPC-的调用过程"><a href="#1-RPC-的调用过程" class="headerlink" title="1. RPC 的调用过程"></a>1. RPC 的调用过程</h1><p>通过下图我们来了解一下 RPC 的调用过程，从宏观上来看看到底一次 RPC 调用经过些什么过程。</p>
 <p>当一次调用开始：</p>
-<p><img src="https://img.xilidou.com/img/2019-04-25-22220.jpg"></p>
+<p><img src="/images/2019-04-25-22220.jpg"></p>
 <ol>
 <li>client 会调用本地动态代理 proxy </li>
 <li>这个代理会将调用通过协议转序列化字节流</li>
@@ -370,7 +370,7 @@
 <li>如果请求有返回值，又需要把结果根据协议序列化后，再通过 netty 返回给调用方</li>
 </ol>
 <h1 id="2-框架概览和技术选型"><a href="#2-框架概览和技术选型" class="headerlink" title="2. 框架概览和技术选型"></a>2. 框架概览和技术选型</h1><p>看一看框架的组件:</p>
-<p><img src="https://img.xilidou.com/img/2019-04-25-022221.jpg"></p>
+<p><img src="/images/2019-04-25-022221.jpg"></p>
 <p><code>clinet</code>就是调用方。<code>servive</code>是服务的提供者。<code>protocol</code>包定义了通信协议。<code>common</code>包含了通用的一些逻辑组件。</p>
 <p>技术选型项目使用 <code>maven</code> 作为包管理工具，<code>json</code> 作为序列化协议，使用<code>spring boot</code>管理对象的生命周期，<code>netty</code> 作为 <code>nio</code> 的网路组件。所以要阅读这篇文章，你需要对<code>spring boot</code>和<code>netty</code>有基本的了解。</p>
 <p>下面就看看每个组件的具体实现：</p>

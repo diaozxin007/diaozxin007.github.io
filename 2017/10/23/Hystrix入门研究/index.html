@@ -31,16 +31,16 @@
 <meta property="og:site_name" content="犀利豆的博客">
 <meta property="og:description" content="1、Hystrix是什么Hystrix 是Netflix开源的一个针对分布式容错和库。Hystrix的主要功能是隔离分布式系统之间的故障，防止故障带来的雪崩效应。同时也能提供一个分布式服务的优雅的降级方案。从而提高系统的可用性的组件。">
 <meta property="og:locale">
-<meta property="og:image" content="https://img.xilidou.com/img/2019-04-25-022253.png">
-<meta property="og:image" content="https://img.xilidou.com/img/2019-04-25-22254.png">
+<meta property="og:image" content="https://xilidou.com/images/2019-04-25-022253.png">
+<meta property="og:image" content="https://xilidou.com/images/2019-04-25-22254.png">
 <meta property="article:published_time" content="2017-10-23T15:59:28.000Z">
-<meta property="article:modified_time" content="2020-10-19T05:01:19.000Z">
+<meta property="article:modified_time" content="2020-11-15T08:52:06.580Z">
 <meta property="article:author" content="Zhengxin Diao">
 <meta property="article:tag" content="java">
 <meta property="article:tag" content="后端">
 <meta property="article:tag" content="Hystrix">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://img.xilidou.com/img/2019-04-25-022253.png">
+<meta name="twitter:image" content="https://xilidou.com/images/2019-04-25-022253.png">
 
 
 <link rel="canonical" href="https://xilidou.com/2017/10/23/Hystrix%E5%85%A5%E9%97%A8%E7%A0%94%E7%A9%B6/">
@@ -318,7 +318,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">Edited on</span>
-        <time title="Modified: 2020-10-19 13:01:19" itemprop="dateModified" datetime="2020-10-19T13:01:19+08:00">2020-10-19</time>
+        <time title="Modified: 2020-11-15 16:52:06" itemprop="dateModified" datetime="2020-11-15T16:52:06+08:00">2020-11-15</time>
       </span>
 
   
@@ -392,7 +392,7 @@
         return &quot;Hello Failure &quot; + name + &quot;!&quot;;
     &#125;
 &#125;</code></pre>
-<h2 id="4、Hystrix实现思路分析"><a href="#4、Hystrix实现思路分析" class="headerlink" title="4、Hystrix实现思路分析"></a>4、Hystrix实现思路分析</h2><h3 id="1、数据流"><a href="#1、数据流" class="headerlink" title="1、数据流"></a>1、数据流</h3><p><img src="https://img.xilidou.com/img/2019-04-25-022253.png" alt="数据流"></p>
+<h2 id="4、Hystrix实现思路分析"><a href="#4、Hystrix实现思路分析" class="headerlink" title="4、Hystrix实现思路分析"></a>4、Hystrix实现思路分析</h2><h3 id="1、数据流"><a href="#1、数据流" class="headerlink" title="1、数据流"></a>1、数据流</h3><p><img src="/images/2019-04-25-022253.png" alt="数据流"></p>
 <ol>
 <li>初始化 <code>HystrixCommand</code> 或者 <code>HystrixObservableCommand</code> 对象。</li>
 <li>执行。</li>
@@ -404,7 +404,7 @@
 <li>判断时候需要降级</li>
 <li>完成请求</li>
 </ol>
-<h3 id="2、熔断器"><a href="#2、熔断器" class="headerlink" title="2、熔断器"></a>2、熔断器</h3><p><img src="https://img.xilidou.com/img/2019-04-25-22254.png"><br>每个熔断器维护10个buckets窗口，每秒生成一个新的bucket，把最早的bucket抛弃，每个bucket记录了调用的，成功、失败、超时、拒绝的次数，如果失败数量达到某个阈值，就会触发熔断。</p>
+<h3 id="2、熔断器"><a href="#2、熔断器" class="headerlink" title="2、熔断器"></a>2、熔断器</h3><p><img src="/images/2019-04-25-22254.png"><br>每个熔断器维护10个buckets窗口，每秒生成一个新的bucket，把最早的bucket抛弃，每个bucket记录了调用的，成功、失败、超时、拒绝的次数，如果失败数量达到某个阈值，就会触发熔断。</p>
 <h3 id="3、隔离"><a href="#3、隔离" class="headerlink" title="3、隔离"></a>3、隔离</h3><h4 id="线程隔离"><a href="#线程隔离" class="headerlink" title="线程隔离"></a>线程隔离</h4><p>每个下游调用使用独立的线程池，而非与请求的调用共用一个线程池，这样可以防止失败的调用占用共用的线程池，造成整个系统拒绝服务。</p>
 <h4 id="优缺点"><a href="#优缺点" class="headerlink" title="优缺点"></a>优缺点</h4><p>优点：<br>相互独立，减少互相影响的风险，总的来说就是隔离解耦，不会互相影响》<br>缺点：<br>过多的线程池造成cpu计算能力的消耗，和增加代码的复杂度。</p>
 <h4 id="信号量隔离"><a href="#信号量隔离" class="headerlink" title="信号量隔离"></a>信号量隔离</h4><p>信号隔离也可以用于限制并发访问，防止阻塞扩散, 与线程隔离最大不同在于执行依赖代码的线程依然是请求线程（该线程需要通过信号申请）,<br>   如果客户端是可信的且可以快速返回，可以使用信号隔离替换线程隔离,降低开销.</p>

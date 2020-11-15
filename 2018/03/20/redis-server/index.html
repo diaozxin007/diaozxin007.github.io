@@ -31,12 +31,12 @@
 <meta property="og:site_name" content="犀利豆的博客">
 <meta property="og:description" content="原文地址：https:&#x2F;&#x2F;www.xilidou.com&#x2F;2018&#x2F;03&#x2F;20&#x2F;redis-server&#x2F; 之前的文章讲解了 Redis 的数据结构，这回就可以看看作为内存数据库，Redis 是怎么存储数据的。以及键是怎么过期的。 阅读这篇文章你将会了解到：  Redis 的数据库实现 Redis 键过期的策略">
 <meta property="og:locale">
-<meta property="og:image" content="https://img.xilidou.com/img/redisServer.jpg">
-<meta property="og:image" content="https://img.xilidou.com/img/dbNoExpire.jpg">
-<meta property="og:image" content="https://img.xilidou.com/img/db.jpg">
-<meta property="og:image" content="https://img.xilidou.com/img/2019-04-25-022206.jpg">
+<meta property="og:image" content="https://xilidou.com/images/redisServer.jpg">
+<meta property="og:image" content="https://xilidou.com/images/dbNoExpire.jpg">
+<meta property="og:image" content="https://xilidou.com/images/db.jpg">
+<meta property="og:image" content="https://xilidou.com/images/2019-04-25-022206.jpg">
 <meta property="article:published_time" content="2018-03-20T09:26:08.000Z">
-<meta property="article:modified_time" content="2020-10-19T05:01:19.000Z">
+<meta property="article:modified_time" content="2020-11-15T08:52:06.581Z">
 <meta property="article:author" content="Zhengxin Diao">
 <meta property="article:tag" content="redis">
 <meta property="article:tag" content="db">
@@ -44,7 +44,7 @@
 <meta property="article:tag" content="redis key">
 <meta property="article:tag" content="redis expire">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://img.xilidou.com/img/redisServer.jpg">
+<meta name="twitter:image" content="https://xilidou.com/images/redisServer.jpg">
 
 
 <link rel="canonical" href="https://xilidou.com/2018/03/20/redis-server/">
@@ -322,7 +322,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">Edited on</span>
-        <time title="Modified: 2020-10-19 13:01:19" itemprop="dateModified" datetime="2020-10-19T13:01:19+08:00">2020-10-19</time>
+        <time title="Modified: 2020-11-15 16:52:06" itemprop="dateModified" datetime="2020-11-15T16:52:06+08:00">2020-11-15</time>
       </span>
 
   
@@ -372,7 +372,7 @@
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">redisDb</span> &#123;</span></span><br><span class="line">    dict *dict;                 <span class="comment">/* The keyspace for this DB */</span></span><br><span class="line">    dict *expires;              <span class="comment">/* Timeout of keys with a timeout set */</span></span><br><span class="line">    dict *blocking_keys;        <span class="comment">/* Keys with clients waiting for data (BLPOP)*/</span></span><br><span class="line">    dict *ready_keys;           <span class="comment">/* Blocked keys that received a PUSH */</span></span><br><span class="line">    dict *watched_keys;         <span class="comment">/* WATCHED keys for MULTI/EXEC CAS */</span></span><br><span class="line">    <span class="keyword">int</span> id;                     <span class="comment">/* Database ID */</span></span><br><span class="line">    <span class="keyword">long</span> <span class="keyword">long</span> avg_ttl;          <span class="comment">/* Average TTL, just for stats */</span></span><br><span class="line">&#125; redisDb;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
 
 <p>总体来说redis的 server 包含若干个（默认16个） redisDb 数据库。</p>
-<p><img src="https://img.xilidou.com/img/redisServer.jpg" alt="db"></p>
+<p><img src="/images/redisServer.jpg" alt="db"></p>
 <p>Redis 是一个 k-v 存储的键值对数据库。其中字典 dict 保存了数据库中的所有键值对，这个地方叫做 <code>keyspace</code> 直译过来就是“键空间”。</p>
 <p>所以我们就可以这么认为，在 redisDb 中我们使用 dict（字典）来维护键空间。</p>
 <ul>
@@ -387,7 +387,7 @@
 
 <p>实际上就是为 keyspace 增加了一个 key 是包含字符串“mobile”的字符串对象，value 为包含字符“13800000000”的字符串对象。</p>
 <p>看图：</p>
-<p><img src="https://img.xilidou.com/img/dbNoExpire.jpg" alt="db"></p>
+<p><img src="/images/dbNoExpire.jpg" alt="db"></p>
 <p>对于删改查，没啥好说的。类似java 的 map 操作，大多数程序员应该都能理解。</p>
 <p>需要特别注意的是，再执行对键的读写操作的时候，Redis 还要做一些额外的维护动作：</p>
 <ul>
@@ -412,7 +412,7 @@
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&gt;redis PEXPIREAT mobile 1521469812000</span><br></pre></td></tr></table></figure>
 
 <p>这个时候就会在过期的 字典中增加一个键值对。如下图：</p>
-<p><img src="https://img.xilidou.com/img/db.jpg" alt="db"></p>
+<p><img src="/images/db.jpg" alt="db"></p>
 <p>对于过期的判断逻辑就很简单：</p>
 <ol>
 <li>在 字典 expires 中 key 是否存在。</li>
@@ -467,7 +467,7 @@
 <p><a target="_blank" rel="noopener" href="https://www.xilidou.com/2018/03/12/redis-data/?fromblog=redis-server">Redis 的基础数据结构（一） 可变字符串、链表、字典</a></p>
 <p><a target="_blank" rel="noopener" href="https://www.xilidou.com/2018/03/13/redis-data2/?blogfrom=redis-server">Redis 的基础数据结构（二） 整数集合、跳跃表、压缩列表</a></p>
 <p><a target="_blank" rel="noopener" href="https://www.xilidou.com/2018/03/15/redis-object/">Redis 的基础数据结构（三）对象 </a></p>
-<p>欢迎关注我的微信公众号：<br><img src="https://img.xilidou.com/img/2019-04-25-022206.jpg" alt="二维码"></p>
+<p>欢迎关注我的微信公众号：<br><img src="/images/2019-04-25-022206.jpg" alt="二维码"></p>
 
     </div>
 

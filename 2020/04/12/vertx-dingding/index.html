@@ -31,19 +31,19 @@
 <meta property="og:site_name" content="犀利豆的博客">
 <meta property="og:description" content="最近研究 Vetrx 简直爱不释手。迫不及待的想给大家介绍一下。  Vertx 是什么 Vertx 是一个运行在 JVM 上，用来构建响应式应用的工具集。 基于 netty 的高性能的，异步的网络库。 对 netty 进行了封装，提供更加友好的 API。 同时实现了一些基于异步调用的库，包括database connection, monitoring, authentication, loggi">
 <meta property="og:locale">
-<meta property="og:image" content="https://img.xilidou.com/img/carbon.png">
-<meta property="og:image" content="https://img.xilidou.com/img/event-loop.png">
-<meta property="og:image" content="https://img.xilidou.com/img/verticle-threading-config.png">
-<meta property="og:image" content="https://img.xilidou.com/img/event-bus.png">
-<meta property="og:image" content="https://img.xilidou.com/img/2019-04-25-022202.jpg">
+<meta property="og:image" content="https://xilidou.com/images/carbon.png">
+<meta property="og:image" content="https://xilidou.com/images/event-loop.png">
+<meta property="og:image" content="https://xilidou.com/images/verticle-threading-config.png">
+<meta property="og:image" content="https://xilidou.com/images/event-bus.png">
+<meta property="og:image" content="https://xilidou.com/images/2019-04-25-022202.jpg">
 <meta property="article:published_time" content="2020-04-12T08:39:16.000Z">
-<meta property="article:modified_time" content="2020-10-19T05:01:20.000Z">
+<meta property="article:modified_time" content="2020-11-15T08:52:06.816Z">
 <meta property="article:author" content="Zhengxin Diao">
 <meta property="article:tag" content="java">
 <meta property="article:tag" content="vertx">
 <meta property="article:tag" content="dingding">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://img.xilidou.com/img/carbon.png">
+<meta name="twitter:image" content="https://xilidou.com/images/carbon.png">
 
 
 <link rel="canonical" href="https://xilidou.com/2020/04/12/vertx-dingding/">
@@ -321,7 +321,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">Edited on</span>
-        <time title="Modified: 2020-10-19 13:01:20" itemprop="dateModified" datetime="2020-10-19T13:01:20+08:00">2020-10-19</time>
+        <time title="Modified: 2020-11-15 16:52:06" itemprop="dateModified" datetime="2020-11-15T16:52:06+08:00">2020-11-15</time>
       </span>
 
   
@@ -356,7 +356,7 @@
     
     <div class="post-body" itemprop="articleBody">
         <p>最近研究 Vetrx 简直爱不释手。迫不及待的想给大家介绍一下。</p>
-<p><img src="https://img.xilidou.com/img/carbon.png" alt="carbon"></p>
+<p><img src="/images/carbon.png" alt="carbon"></p>
 <h2 id="Vertx-是什么"><a href="#Vertx-是什么" class="headerlink" title="Vertx 是什么"></a>Vertx 是什么</h2><ul>
 <li>Vertx 是一个运行在 JVM 上，用来构建响应式应用的工具集。</li>
 <li>基于 netty 的高性能的，异步的网络库。</li>
@@ -372,17 +372,17 @@
 <h2 id="Vertx-的几个重要概念"><a href="#Vertx-的几个重要概念" class="headerlink" title="Vertx 的几个重要概念"></a>Vertx 的几个重要概念</h2><h3 id="Event-Loop"><a href="#Event-Loop" class="headerlink" title="Event Loop"></a>Event Loop</h3><p>Event Loop 顾名思义，就是事件循环的。在 Vertx 的生命周期内，会不断的轮询查询事件。</p>
 <p>传统的多线程编程模型，每个请求就 fork 一个新的线程对请求进行处理。这样的编程模型有实现起来比较简单，一个连接对应一个线程，如果有大量的请求需要处理，就需要 fork 出大量的线程进行处理，对于操作系统来说调度大量线程造成系统 load 升高。</p>
 <p>所以为了能够处理大量请求，就需要过渡到基于 Roactor 模型的 Event Loop上。</p>
-<p><img src="https://img.xilidou.com/img/event-loop.png" alt="https://img.xilidou.com/img//event-loop.png"></p>
+<p><img src="/images/event-loop.png" alt="/images//event-loop.png"></p>
 <p>官网的这个图就很形象了。Eventloop 不断的轮训，获取事件然后安排上不同的 Handler 处理对应的Event。</p>
 <p>这里要注意的是为了保证程序的正常运行，event 必须是非阻塞的。否则就会造成 eventloop 的阻塞，影响Vertx 的表现。但是现实中的程序肯定不能保证都是非阻塞的，Vertx 也提供了相应的处理阻塞的方法的机制。我们在下面会继续介绍。</p>
 <h3 id="Verticle"><a href="#Verticle" class="headerlink" title="Verticle"></a>Verticle</h3><p>在 Vertx 中我们经常可以看见 Vertical 组件。</p>
-<p><img src="https://img.xilidou.com/img/verticle-threading-config.png" alt="verticle"></p>
+<p><img src="/images/verticle-threading-config.png" alt="verticle"></p>
 <p>Verticle 是由 Vert.x 部署和运行的代码块。默认情况一个 Vert.x 实例维护了N（默认情况下N = CPU核数 x 2）个 Event Loop 线程。Verticle 实例可使用任意 Vert.x 支持的编程语言编写，而且一个简单的应用程序也可以包含多种语言编写的 Verticle。</p>
 <p>您可以将 Verticle 想成 <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Actor_model">Actor Model</a> 中的 Actor。</p>
 <p>一个应用程序通常是由在同一个 Vert.x 实例中同时运行的许多 Verticle 实例组合而成。不同的 Verticle 实例通过向 Event Bus 收发送消息来相互通信。</p>
 <h3 id="Event-bus"><a href="#Event-bus" class="headerlink" title="Event bus"></a>Event bus</h3><p>Vertx 中的 Event bus 如果类比后端常用的 MQ 就更加容易理解了。实际上 Event Bus 就是 Verticle 之间传递 信息的桥梁。</p>
 <p>换句话说，就是 Java 通用设计模式中的监听模式，或者是我们常说的 基于 MQ 消息开发模式。</p>
-<p><img src="https://img.xilidou.com/img/event-bus.png" alt="Event bus"></p>
+<p><img src="/images/event-bus.png" alt="Event bus"></p>
 <h2 id="回到-Vertx"><a href="#回到-Vertx" class="headerlink" title="回到 Vertx"></a>回到 Vertx</h2><p>上文我们讨论了 vertx 的模型和机制，现在人们就看看怎么使用 vertx 开发一个程序。</p>
 <p>我会结合之前写的 暴打钉三多的来进行讲解,一切从 Vertx 开始。</p>
 <figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">val</span> vertx = Vertx.vertx()</span><br></pre></td></tr></table></figure>
@@ -489,7 +489,7 @@
 <li><a target="_blank" rel="noopener" href="https://vertx.io/docs/vertx-core/kotlin/">Vert.x Core Manual</a></li>
 </ol>
 <p>欢迎关注我的微信公众号:</p>
-<p><img src="https://img.xilidou.com/img/2019-04-25-022202.jpg" alt="二维码"></p>
+<p><img src="/images/2019-04-25-022202.jpg" alt="二维码"></p>
 
     </div>
 

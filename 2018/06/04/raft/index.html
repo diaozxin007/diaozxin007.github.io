@@ -31,16 +31,16 @@
 <meta property="og:site_name" content="犀利豆的博客">
 <meta property="og:description" content="好久没有更新博客了，最近研究了Raft 协议，谈谈自己对 Raft 协议的理解。希望这篇文章能够帮助大家理解 Raft 论文。">
 <meta property="og:locale">
-<meta property="og:image" content="https://img.xilidou.com/img/raft_role.png">
-<meta property="og:image" content="https://img.xilidou.com/img/raft_error.png">
-<meta property="og:image" content="https://img.xilidou.com/img/raft2.jpg">
+<meta property="og:image" content="https://xilidou.com/images/raft_role.png">
+<meta property="og:image" content="https://xilidou.com/images/raft_error.png">
+<meta property="og:image" content="https://xilidou.com/images/raft2.jpg">
 <meta property="article:published_time" content="2018-06-04T13:40:31.000Z">
-<meta property="article:modified_time" content="2020-10-19T05:01:19.000Z">
+<meta property="article:modified_time" content="2020-11-15T08:52:06.583Z">
 <meta property="article:author" content="Zhengxin Diao">
 <meta property="article:tag" content="分布式">
 <meta property="article:tag" content="raft">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://img.xilidou.com/img/raft_role.png">
+<meta name="twitter:image" content="https://xilidou.com/images/raft_role.png">
 
 
 <link rel="canonical" href="https://xilidou.com/2018/06/04/raft/">
@@ -318,7 +318,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">Edited on</span>
-        <time title="Modified: 2020-10-19 13:01:19" itemprop="dateModified" datetime="2020-10-19T13:01:19+08:00">2020-10-19</time>
+        <time title="Modified: 2020-11-15 16:52:06" itemprop="dateModified" datetime="2020-11-15T16:52:06+08:00">2020-11-15</time>
       </span>
 
   
@@ -390,7 +390,7 @@
 </ul>
 <p>每个领导人都有一个任期限制。每一届任期的开始阶段，都是选举。如果选举出了领导者就由该领导人负责领导集群。如果没有选举出领导，就会进入下一次选举。直到选举出领导者为止。</p>
 <p>角色之间的转换：</p>
-<p><img src="https://img.xilidou.com/img/raft_role.png" alt="role"></p>
+<p><img src="/images/raft_role.png" alt="role"></p>
 <p>领导者会周期性的向每台机器发送心跳，确保自己的领导地位。</p>
 <p>跟随者在长时间没有收到领导人的心跳，就会发起投票成为候选人，同时任期 + 1，如果获得超过半数的支持，就升任为领导。</p>
 <p>如果候选人，在发起投票的时候，发现集群里面有领导人的时候，就会重新成为追随者。</p>
@@ -410,11 +410,11 @@
 <h3 id="选举限制"><a href="#选举限制" class="headerlink" title="选举限制"></a>选举限制</h3><p>Raft 保证自己的日志，永远由领导者向追随者流动。也就是说领导者永远不会删改自己的日志，只能向上增加日志。为了达成这个限制，Raft 使用投票的方式来阻止没有包含全部日志条目的服务器赢得选举。</p>
 <p>当一个候选人发起投票的时候，需要告诉大家，自己最新的日志。其他节点在投票的时候，要保证自己的日志不能比候选人的新，否则就拒绝投票。通过这个限制就保证了获取多数票的领导者的日志，至少比大多数人要新。</p>
 <p>任期越大，日志越长，越容易成为领导者。</p>
-<h3 id="提交之前任期的日志条目"><a href="#提交之前任期的日志条目" class="headerlink" title="提交之前任期的日志条目"></a>提交之前任期的日志条目</h3><p><img src="https://img.xilidou.com/img/raft_error.png" alt="erro"></p>
+<h3 id="提交之前任期的日志条目"><a href="#提交之前任期的日志条目" class="headerlink" title="提交之前任期的日志条目"></a>提交之前任期的日志条目</h3><p><img src="/images/raft_error.png" alt="erro"></p>
 <p><del>这个在论文中比较难以理解。我看到这一节的时候也是读了好几遍才理解论文的意思。实际上作者表达的意思是图 （d）是正确的，而（e）是错误的。</del></p>
 <p><del>因为 2 号日志没有commited，但是由于一系列操作，造成了 2 号日志没有提交，但是高任期的leader 却认为 2 号日志被提交了。</del></p>
 <p>与知乎网友讨论发现这个地方还是理解有误，这个图后来作者换了一个更容易理解的图：</p>
-<p><img src="https://img.xilidou.com/img/raft2.jpg" alt="error2"></p>
+<p><img src="/images/raft2.jpg" alt="error2"></p>
 <p>应该是说，如果高term的leader，可以操作低任期的 log 的话，会造成 d 和 e 情况错误。且 d 造成了 2 号日志的丢失。所以加上限制以后，就不会出现这种问题了。</p>
 <p>为了解决这个问题。Raft 限制，只有当前任期的 leader 可以决定一条日志是否 commited，而不能由高任期的 leader 通过计算某条日志（例子中的 2号日志）超过半数节点持有，就确定日志被commited。</p>
 <p>换句话说，就是 Raft 限制每个leader 只能确定自己任期内的日志是否commited。而不能由高任期的 leader确定。</p>

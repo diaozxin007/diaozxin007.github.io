@@ -31,20 +31,20 @@
 <meta property="og:site_name" content="犀利豆的博客">
 <meta property="og:description" content="前言是的，最近我又换工作了，在看新团队的代码的时候发现，同事们为了追求服务的响应时间，在项目中大量的使用了很多高级的数据结构。 作为传统 Curd 程序员，对算法和数据结构已经比较生疏了。如今看到这些”高级的代码“有点汗颜。所以趁周末好好的在家补课，重新复习一下。 文章将会是一个系列，慢慢的查缺补漏。">
 <meta property="og:locale">
-<meta property="og:image" content="https://img.xilidou.com/img/workhard.jpg">
-<meta property="og:image" content="https://img.xilidou.com/img/TrieTree1.png">
-<meta property="og:image" content="https://img.xilidou.com/img/TrieTree3.png">
-<meta property="og:image" content="https://img.xilidou.com/img/suggest.png">
-<meta property="og:image" content="https://img.xilidou.com/img/TrieTree2.png">
-<meta property="og:image" content="https://img.xilidou.com/img/2019-04-25-022202.jpg">
+<meta property="og:image" content="https://xilidou.com/images/workhard.jpg">
+<meta property="og:image" content="https://xilidou.com/images/TrieTree1.png">
+<meta property="og:image" content="https://xilidou.com/images/TrieTree3.png">
+<meta property="og:image" content="https://xilidou.com/images/suggest.png">
+<meta property="og:image" content="https://xilidou.com/images/TrieTree2.png">
+<meta property="og:image" content="https://xilidou.com/images/2019-04-25-022202.jpg">
 <meta property="article:published_time" content="2020-03-07T10:12:03.000Z">
-<meta property="article:modified_time" content="2020-10-19T05:01:20.000Z">
+<meta property="article:modified_time" content="2020-11-15T08:52:06.580Z">
 <meta property="article:author" content="Zhengxin Diao">
 <meta property="article:tag" content="java">
 <meta property="article:tag" content="算法">
 <meta property="article:tag" content="trie">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://img.xilidou.com/img/workhard.jpg">
+<meta name="twitter:image" content="https://xilidou.com/images/workhard.jpg">
 
 
 <link rel="canonical" href="https://xilidou.com/2020/03/07/trie/">
@@ -322,7 +322,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">Edited on</span>
-        <time title="Modified: 2020-10-19 13:01:20" itemprop="dateModified" datetime="2020-10-19T13:01:20+08:00">2020-10-19</time>
+        <time title="Modified: 2020-11-15 16:52:06" itemprop="dateModified" datetime="2020-11-15T16:52:06+08:00">2020-11-15</time>
       </span>
 
   
@@ -359,7 +359,7 @@
         <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>是的，最近我又换工作了，在看新团队的代码的时候发现，同事们为了追求服务的响应时间，在项目中大量的使用了很多高级的数据结构。</p>
 <p>作为传统 Curd 程序员，对算法和数据结构已经比较生疏了。如今看到这些”高级的代码“有点汗颜。所以趁周末好好的在家补课，重新复习一下。</p>
 <p>文章将会是一个系列，慢慢的查缺补漏。</p>
-<p><img src="https://img.xilidou.com/img/workhard.jpg" alt="Trie/TrieTree1.png"></p>
+<p><img src="/images/workhard.jpg" alt="Trie/TrieTree1.png"></p>
 <a id="more"></a>
 
 <h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>Trie 树又叫字典查找树。顾名思义，字典查找树，主要解决的就是字符串的查找。有以下两个优势。</p>
@@ -370,10 +370,10 @@
 <h2 id="基本数据结构"><a href="#基本数据结构" class="headerlink" title="基本数据结构"></a>基本数据结构</h2><p>首先 Trie 树，是一棵树。树是由需要建立的所有词构成。</p>
 <p>假设我们有，bee 、sea、 shells，she，sells，几个单词。我们可以使用这几个单词构建一棵树。</p>
 <p>通过图片我们就可以直观的看出 Trie 的数据结构。这个棵树是由若干节点，链接而成，节点可以指向下一个节点，也可以指向空。从 root 节点开始，顺着链接随便找某个链接往下，直到最低端，经过的路径正好是上文的单词。</p>
-<p><img src="https://img.xilidou.com/img/TrieTree1.png" alt="Trie/TrieTree1.png"></p>
+<p><img src="/images/TrieTree1.png" alt="Trie/TrieTree1.png"></p>
 <h3 id="数据的代码表示"><a href="#数据的代码表示" class="headerlink" title="数据的代码表示"></a>数据的代码表示</h3><p>为了方便使用代码表示。可以考虑每个节点使用数组表示。每个节点都含有一个数组，数组的大小为R，R 是数组的基数，对应每个可能出现的字符。R 的选取取决于报错的字符的类型，如果只包含英文则256 就可以了。如果是中文就需要 65536。</p>
 <p>字符和键值都保存在数据结构中。</p>
-<p><img src="https://img.xilidou.com/img/TrieTree3.png" alt="Trie/TrieTree3.png"></p>
+<p><img src="/images/TrieTree3.png" alt="Trie/TrieTree3.png"></p>
 <p>所以实现代码如下：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TrieST</span>&lt;<span class="title">Value</span>&gt; </span>&#123;</span><br><span class="line"></span><br><span class="line"> <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> R = <span class="number">256</span>;</span><br><span class="line"> <span class="keyword">private</span> Node root;</span><br><span class="line"></span><br><span class="line"> <span class="keyword">private</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">Node</span> </span>&#123;</span><br><span class="line">  <span class="keyword">public</span> Object val; <span class="comment">// 键值</span></span><br><span class="line">  <span class="keyword">public</span> Node[] next = <span class="keyword">new</span> Node[R];</span><br><span class="line"> &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
@@ -405,11 +405,11 @@
 <p>如果没有命中的数据，查询的次数小于等于 key 的长度 。</p>
 <h2 id="应用"><a href="#应用" class="headerlink" title="应用"></a>应用</h2><p>这里先着重介绍一下 trie 树的其中一个应用 ”前缀匹配“。</p>
 <p>我们在搜索框里面输入一个词的时候，通常会收到提示的列表如下图：</p>
-<p><img src="https://img.xilidou.com/img/suggest.png" alt="Trie/Untitled.png"></p>
+<p><img src="/images/suggest.png" alt="Trie/Untitled.png"></p>
 <p>输入 flink 的时候，搜索引擎会提示联想出用户可能的输入,提升用户体验。</p>
 <p>有了上面的 Trie 树的介绍。具体实现这个功能就比较简单了。</p>
 <p>回到我们原有的例子，假设词库里面有单词 bee 、sea、 shells，she，sells。如果用户输入 se 两个字符，我们应该会向用户提示 se 开始的词： sea 和 sells。</p>
-<p><img src="https://img.xilidou.com/img/TrieTree2.png" alt="Trie/TrieTree2.png"></p>
+<p><img src="/images/TrieTree2.png" alt="Trie/TrieTree2.png"></p>
 <p>结合图片，我们要找到 se 开头的字符。我们首先要定位出图中红色的链条，然后把红色 e 的所有子链找出来。当然如果 e 的子链特别多，我们就需要考虑对子链进行截断。具体怎么截断我们以后会的文章里面可能会讲解。</p>
 <p>我们先看代码：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">collect</span><span class="params">(Node x, String pre, Queue&lt;String&gt; q)</span></span>&#123;</span><br><span class="line">  </span><br><span class="line">  <span class="comment">//3</span></span><br><span class="line">  <span class="keyword">if</span>(x == <span class="keyword">null</span>)&#123;</span><br><span class="line">   <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  <span class="comment">//4</span></span><br><span class="line">  <span class="keyword">if</span>(x.val != <span class="keyword">null</span>)&#123;</span><br><span class="line">   q.add(pre);</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  <span class="comment">//5</span></span><br><span class="line">  <span class="keyword">for</span>(<span class="keyword">char</span> c = <span class="number">0</span>;c &lt; R; c++)&#123;</span><br><span class="line">   collect(x.next[c],pre + c, q);</span><br><span class="line">  &#125;</span><br><span class="line"> &#125;</span><br><span class="line"></span><br><span class="line"> <span class="function"><span class="keyword">public</span> Iterable&lt;String&gt; <span class="title">keysWithPrefix</span><span class="params">(String pre)</span></span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="comment">//1</span></span><br><span class="line">  Queue&lt;String&gt; q = <span class="keyword">new</span> LinkedList&lt;String&gt;();</span><br><span class="line">  </span><br><span class="line">  <span class="comment">//2</span></span><br><span class="line">  collect(get(root,pre,<span class="number">0</span>),pre,q);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> q;</span><br><span class="line"></span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
@@ -427,7 +427,7 @@
 <p>如果运用在英文文本处理中，假设单词的平均长度是 11 个字符，R 的大小是 256，100万个键构成的树大约有 2亿5千万个链接数。</p>
 <p>是典型的空间换时间应用。</p>
 <p>欢迎关注我的微信公众号:</p>
-<p><img src="https://img.xilidou.com/img/2019-04-25-022202.jpg" alt="二维码"></p>
+<p><img src="/images/2019-04-25-022202.jpg" alt="二维码"></p>
 
     </div>
 

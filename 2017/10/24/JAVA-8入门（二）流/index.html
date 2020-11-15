@@ -31,15 +31,15 @@
 <meta property="og:site_name" content="犀利豆的博客">
 <meta property="og:description" content="1.简单使用书接上回，我们这一讲要讨论 JAVA 8 的新的 API 流。如果我们有这样一个需求，需要挑选出菜谱里面卡路里小于1000，且卡路里排名前三的菜品的名称。">
 <meta property="og:locale">
-<meta property="og:image" content="https://img.xilidou.com/img/2019-04-25-022225.png">
+<meta property="og:image" content="https://xilidou.com/images/2019-04-25-022225.png">
 <meta property="article:published_time" content="2017-10-24T11:15:04.000Z">
-<meta property="article:modified_time" content="2020-10-19T05:01:19.000Z">
+<meta property="article:modified_time" content="2020-11-15T08:52:06.581Z">
 <meta property="article:author" content="Zhengxin Diao">
 <meta property="article:tag" content="java">
 <meta property="article:tag" content="Java 8">
 <meta property="article:tag" content="stream">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://img.xilidou.com/img/2019-04-25-022225.png">
+<meta name="twitter:image" content="https://xilidou.com/images/2019-04-25-022225.png">
 
 
 <link rel="canonical" href="https://xilidou.com/2017/10/24/JAVA-8%E5%85%A5%E9%97%A8%EF%BC%88%E4%BA%8C%EF%BC%89%E6%B5%81/">
@@ -317,7 +317,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">Edited on</span>
-        <time title="Modified: 2020-10-19 13:01:19" itemprop="dateModified" datetime="2020-10-19T13:01:19+08:00">2020-10-19</time>
+        <time title="Modified: 2020-11-15 16:52:06" itemprop="dateModified" datetime="2020-11-15T16:52:06+08:00">2020-11-15</time>
       </span>
 
   
@@ -368,7 +368,7 @@
 <li>数据处理操作 流的数据处理功能类似，数据库的操作，同时也支持函数式编程中的操作。</li>
 </ul>
 <p>我们看看接口<code>java.util.stream.Stream</code>都有一些什么方法：</p>
-<p><img src="https://img.xilidou.com/img/2019-04-25-022225.png" alt="stea"></p>
+<p><img src="/images/2019-04-25-022225.png" alt="stea"></p>
 <p>我们可以看到，之前我们在上一个例子里面使用的方法，<code>filter()</code>，<code>sorted()</code>，<code>limit()</code>，<code>map()</code> 的返回值也是一个流<code>Stream</code>，也就是说我们可以，把所有的操作串起来。这个是流的一个特点<em>流水线</em></p>
 <p>还有一个特点就是<em>内部迭代</em>，与集合的迭代不同，流的迭代不是显式的迭代。</p>
 <h2 id="3-流的基本操作"><a href="#3-流的基本操作" class="headerlink" title="3. 流的基本操作"></a>3. 流的基本操作</h2><h3 id="1-筛选和切片"><a href="#1-筛选和切片" class="headerlink" title="1. 筛选和切片"></a>1. 筛选和切片</h3><ol>

@@ -31,18 +31,18 @@
 <meta property="og:site_name" content="犀利豆的博客">
 <meta property="og:description" content="原文地址：https:&#x2F;&#x2F;www.xilidou.com&#x2F;2018&#x2F;01&#x2F;08&#x2F;spring-ioc&#x2F; Spring 作为 J2ee 开发事实上的标准，是每个Java开发人员都需要了解的框架。但是Spring 的 IoC 和 Aop 的特性，对于初级的Java开发人员来说还是比较难于理解的。所以我就想写一系列的文章给大家讲解这些特性。从而能够进一步深入了解 Spring 框架。 读完这篇文章，你将">
 <meta property="og:locale">
-<meta property="og:image" content="https://img.xilidou.com/img/2019-04-25-022213.jpg">
-<meta property="og:image" content="https://img.xilidou.com/img/2019-04-25-022214.jpg">
-<meta property="og:image" content="https://img.xilidou.com/img/2019-04-25-022215.jpg">
-<meta property="og:image" content="https://img.xilidou.com/img/2019-04-25-022216.jpg">
+<meta property="og:image" content="https://xilidou.com/images/2019-04-25-022213.jpg">
+<meta property="og:image" content="https://xilidou.com/images/2019-04-25-022214.jpg">
+<meta property="og:image" content="https://xilidou.com/images/2019-04-25-022215.jpg">
+<meta property="og:image" content="https://xilidou.com/images/2019-04-25-022216.jpg">
 <meta property="article:published_time" content="2018-01-08T11:16:52.000Z">
-<meta property="article:modified_time" content="2020-10-19T05:01:19.000Z">
+<meta property="article:modified_time" content="2020-11-15T08:52:06.581Z">
 <meta property="article:author" content="Zhengxin Diao">
 <meta property="article:tag" content="java">
 <meta property="article:tag" content="spring">
 <meta property="article:tag" content="ioc">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://img.xilidou.com/img/2019-04-25-022213.jpg">
+<meta name="twitter:image" content="https://xilidou.com/images/2019-04-25-022213.jpg">
 
 
 <link rel="canonical" href="https://xilidou.com/2018/01/08/spring-ioc/">
@@ -320,7 +320,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">Edited on</span>
-        <time title="Modified: 2020-10-19 13:01:19" itemprop="dateModified" datetime="2020-10-19T13:01:19+08:00">2020-10-19</time>
+        <time title="Modified: 2020-11-15 16:52:06" itemprop="dateModified" datetime="2020-11-15T16:52:06+08:00">2020-11-15</time>
       </span>
 
   
@@ -372,9 +372,9 @@
 <h1 id="Ioc-有什么用？"><a href="#Ioc-有什么用？" class="headerlink" title="Ioc 有什么用？"></a>Ioc 有什么用？</h1><p>看完上面的解释你一定没有理解什么是 Ioc，因为是第一次看见上面的话也觉得云里雾里。</p>
 <p>不过通过上面的描述我们可以大概的了解到，使用IoC的目的是为了解耦。也就是说IoC 是解耦的一种方法。</p>
 <p>我们知道Java 是一门面向对象的语言，在 Java 中 Everything is Object，我们的程序就是由若干对象组成的。当我们的项目越来越大，合作的开发者越来越多的时候，我们的类就会越来越多，类与类之间的引用就会成指数级的增长。如下图所示：</p>
-<p><img src="https://img.xilidou.com/img/2019-04-25-022213.jpg" alt="混乱"></p>
+<p><img src="/images/2019-04-25-022213.jpg" alt="混乱"></p>
 <p>这样的工程简直就是灾难，如果我们引入 Ioc 框架。由框架来维护类的生命周期和类之间的引用。我们的系统就会变成这样：</p>
-<p><img src="https://img.xilidou.com/img/2019-04-25-022214.jpg" alt="有结构"></p>
+<p><img src="/images/2019-04-25-022214.jpg" alt="有结构"></p>
 <p>这个时候我们发现，我们类之间的关系都由 IoC 框架负责维护类，同时将类注入到需要的类中。也就是类的使用者只负责使用，而不负责维护。把专业的事情交给专业的框架来完成。大大的减少开发的复杂度。</p>
 <p>用一个类比来理解这个问题。Ioc 框架就是我们生活中的房屋中介，首先中介会收集市场上的房源，分别和各个房源的房东建立联系。当我们需要租房的时候，并不需要我们四处寻找各类租房信息。我们直接找房屋中介，中介就会根据你的需求提供相应的房屋信息。大大提升了租房的效率，减少了你与各类房东之间的沟通次数。</p>
 <h1 id="Spring-的-IoC-是怎么实现的"><a href="#Spring-的-IoC-是怎么实现的" class="headerlink" title="Spring 的 IoC 是怎么实现的"></a>Spring 的 IoC 是怎么实现的</h1><p>了解Spring框架最直接的方法就阅读Spring的源码。但是Spring的代码抽象的层次很高，且处理的细节很高。对于大多数人来说不是太容易理解。我读了Spirng的源码以后以我的理解做一个总结,Spirng IoC 主要是以下几个步骤。</p>
@@ -387,7 +387,7 @@
 <p>在这个框架中我们的对象都是单例的，并不支持Spirng的多种作用域。框架的实现使用了cglib 和 Java 的反射。项目中我还使用了 lombok 用来简化代码。</p>
 <p>下面我们就来编写 IoC 框架吧。</p>
 <p>首先我们看看这个框架的基本结构：</p>
-<p><img src="https://img.xilidou.com/img/2019-04-25-022215.jpg" alt="基本结构"></p>
+<p><img src="/images/2019-04-25-022215.jpg" alt="基本结构"></p>
 <p>从宏观上观察一下这个框架，包含了3个package、在包 bean 中定义了我们框架的数据结构。core 是我们框架的核心逻辑所在。utils 是一些通用工具类。接下来我们就逐一讲解一下：</p>
 <h2 id="1-bean-定义了框架的数据结构"><a href="#1-bean-定义了框架的数据结构" class="headerlink" title="1. bean 定义了框架的数据结构"></a>1. bean 定义了框架的数据结构</h2><p><code>BeanDefinition</code> 是我们项目的核心数据结构。用于描述我们需要 IoC 框架管理的对象。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Data</span></span><br><span class="line"><span class="meta">@ToString</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">BeanDefinition</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> String name;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> String className;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> String interfaceName;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> List&lt;ConstructorArg&gt; constructorArgs;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> List&lt;PropertyArg&gt; propertyArgs;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -445,7 +445,7 @@
 <p>下一篇文章 应该会是 《徒手撸框架–实现AOP》。</p>
 <h1 id="更新"><a href="#更新" class="headerlink" title="更新"></a>更新</h1><p>感谢 Heeexy 同学为这个不成熟的框架增加了循环依赖的处理。大家可以阅读这篇文章<a target="_blank" rel="noopener" href="http://heeexy.com/2018/01/28/IoC/">《极简 Spring 框架 – 浅析循环依赖》</a></p>
 <p>github 地址：<a target="_blank" rel="noopener" href="https://github.com/diaozxin007/xilidou-framework">https://github.com/diaozxin007/xilidou-framework</a></p>
-<p>欢迎关注我的微信公众号<br><img src="https://img.xilidou.com/img/2019-04-25-022216.jpg" alt="二维码"></p>
+<p>欢迎关注我的微信公众号<br><img src="/images/2019-04-25-022216.jpg" alt="二维码"></p>
 
     </div>
 

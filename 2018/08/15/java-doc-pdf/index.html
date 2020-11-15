@@ -31,19 +31,19 @@
 <meta property="og:site_name" content="犀利豆的博客">
 <meta property="og:description" content="最近做了一个比较有意思的需求，实现的比较有意思。 需求： 用户上传一个 docx 文件，文档中有占位符若干，识别为文档模板。 用户在前端可以将标签拖拽到模板上，替代占位符。 后端根据标签，获取标签内容，生成 pdf 文档并打上水印。  需求实现的难点： 模板文件来自业务方，财务，执行等角色，不可能使用类似 （freemark、velocity、Thymeleaf） 技术常用的模板标记语言。 文档">
 <meta property="og:locale">
-<meta property="og:image" content="https://img.xilidou.com/img/2019-04-25-022249.jpg">
-<meta property="og:image" content="https://img.xilidou.com/img/2019-04-25-22250.jpg">
-<meta property="og:image" content="https://img.xilidou.com/img/2019-04-25-022250.jpg">
-<meta property="og:image" content="https://img.xilidou.com/img/2019-04-25-022251.jpg">
+<meta property="og:image" content="https://xilidou.com/images/2019-04-25-022249.jpg">
+<meta property="og:image" content="https://xilidou.com/images/2019-04-25-22250.jpg">
+<meta property="og:image" content="https://xilidou.com/images/2019-04-25-022250.jpg">
+<meta property="og:image" content="https://xilidou.com/images/2019-04-25-022251.jpg">
 <meta property="article:published_time" content="2018-08-15T13:00:38.000Z">
-<meta property="article:modified_time" content="2020-10-19T05:01:19.000Z">
+<meta property="article:modified_time" content="2020-11-15T08:52:06.580Z">
 <meta property="article:author" content="Zhengxin Diao">
 <meta property="article:tag" content="java">
 <meta property="article:tag" content="docx">
 <meta property="article:tag" content="pdf">
 <meta property="article:tag" content="office">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://img.xilidou.com/img/2019-04-25-022249.jpg">
+<meta name="twitter:image" content="https://xilidou.com/images/2019-04-25-022249.jpg">
 
 
 <link rel="canonical" href="https://xilidou.com/2018/08/15/java-doc-pdf/">
@@ -321,7 +321,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">Edited on</span>
-        <time title="Modified: 2020-10-19 13:01:19" itemprop="dateModified" datetime="2020-10-19T13:01:19+08:00">2020-10-19</time>
+        <time title="Modified: 2020-11-15 16:52:06" itemprop="dateModified" datetime="2020-11-15T16:52:06+08:00">2020-11-15</time>
       </span>
 
   
@@ -355,7 +355,7 @@
     
     
     <div class="post-body" itemprop="articleBody">
-        <p><img src="https://img.xilidou.com/img/2019-04-25-022249.jpg"></p>
+        <p><img src="/images/2019-04-25-022249.jpg"></p>
 <p>最近做了一个比较有意思的需求，实现的比较有意思。</p>
 <h1 id="需求："><a href="#需求：" class="headerlink" title="需求："></a>需求：</h1><ol>
 <li>用户上传一个 docx 文件，文档中有占位符若干，识别为文档模板。</li>
@@ -403,8 +403,8 @@
 
 <p><code>replaceSymbol()</code> 方法接受两个参数，一个是输入的docx文件数据流，另一个是占位符和内容的map。</p>
 <p>这个方法使用前：</p>
-<p><img src="https://img.xilidou.com/img/2019-04-25-22250.jpg" alt="before"></p>
-<p>使用后：<br><img src="https://img.xilidou.com/img/2019-04-25-022250.jpg" alt="after"></p>
+<p><img src="/images/2019-04-25-22250.jpg" alt="before"></p>
+<p>使用后：<br><img src="/images/2019-04-25-022250.jpg" alt="after"></p>
 <h2 id="增加水印："><a href="#增加水印：" class="headerlink" title="增加水印："></a>增加水印：</h2><p><code>pom.xml</code>需要增加：</p>
 <figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">&lt;!-- https://mvnrepository.com/artifact/com.itextpdf/itextpdf --&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>com.itextpdf<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>itextpdf<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>5.5.13<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
 
@@ -423,7 +423,7 @@
 </ol>
 <h1 id="后记"><a href="#后记" class="headerlink" title="后记"></a>后记</h1><p>整个需求挺有意思，但是在查询的时候发现中文文档的质量实在堪忧，要么极度过时，要么就是大家互相抄袭。<br>查询一个项目的技术文档，最好的路径应该如下:</p>
 <p>项目官网 Getting Started == github demo &gt; StackOverflow &gt;&gt; <del>CSDN</del> &gt;&gt; <del>百度知道</del></p>
-<p>欢迎关注我的微信公众号<br><img src="https://img.xilidou.com/img/2019-04-25-022251.jpg" alt="二维码"></p>
+<p>欢迎关注我的微信公众号<br><img src="/images/2019-04-25-022251.jpg" alt="二维码"></p>
 
     </div>
 
