@@ -37,7 +37,7 @@
 <meta property="og:image" content="https://xilidou.com/images/event-bus.png">
 <meta property="og:image" content="https://xilidou.com/images/2019-04-25-022202.jpg">
 <meta property="article:published_time" content="2020-04-12T08:39:16.000Z">
-<meta property="article:modified_time" content="2020-11-15T08:52:06.816Z">
+<meta property="article:modified_time" content="2020-11-15T13:07:43.879Z">
 <meta property="article:author" content="Zhengxin Diao">
 <meta property="article:tag" content="java">
 <meta property="article:tag" content="vertx">
@@ -230,7 +230,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
           <a href="/archives">
-          <span class="site-state-item-count">41</span>
+          <span class="site-state-item-count">42</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -321,7 +321,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">Edited on</span>
-        <time title="Modified: 2020-11-15 16:52:06" itemprop="dateModified" datetime="2020-11-15T16:52:06+08:00">2020-11-15</time>
+        <time title="Modified: 2020-11-15 21:07:43" itemprop="dateModified" datetime="2020-11-15T21:07:43+08:00">2020-11-15</time>
       </span>
 
   
@@ -395,7 +395,7 @@
 
 <p>这个代码块的意思是，每当 server 的 request 被调用的时候，就返回一个 <code>hello world</code> 。</p>
 <p>所以 Vertx 中的 ‘you’ j就是各种各样的 Handler 。大多数时候我们编写 Vertx 的程序，实际上就是在编写Handler 的行为。然后再告诉 Vertx ，每当 XXX 事件触发以后，你就调用 XXX Handler。</p>
-<h3 id="Don’t-block-me"><a href="#Don’t-block-me" class="headerlink" title="Don’t block me"></a>Don’t block me</h3><p>Vertx 是基于事件的，上文我们提到了 Event Loop ，在 Vertx 中，EventLoop 就是一个勤劳的小蜜蜂，不断的去寻找，到底有哪些事件被触发了。然后再执行对应的 Handler。假如执行 Hanlder 的线程，就是 Event Loop 线程。如过 Handler 执行的时间过长。就会阻塞 Event Loop 。造成别的事件触发的时候。Event Loop 还在处理时间花费较长的 Handler。Event loop就不及时的响应其他的事件。 </p>
+<h3 id="Don’t-block-me"><a href="#Don’t-block-me" class="headerlink" title="Don’t block me"></a>Don’t block me</h3><p>Vertx 是基于事件的，上文我们提到了 Event Loop ，在 Vertx 中，EventLoop 就是一个勤劳的小蜜蜂，不断的去寻找，到底有哪些事件被触发了。然后再执行对应的 Handler。假如执行 Hanlder 的线程，就是 Event Loop 线程。如过 Handler 执行的时间过长。就会阻塞 Event Loop 。造成别的事件触发的时候。Event Loop 还在处理时间花费较长的 Handler。Event loop就不及时的响应其他的事。</p>
 <p>但是现实中，不可能所有的事件 都是非阻塞的。比如查询数据库，调用远程接口等等，那怎么办呢？</p>
 <p>在事件驱动模型中，大概有两种套路解决，这个问题，比如在 Redis 中，Redis 会十分小心的维护一个时间分片。当某个人物执行事件过长的话，就保存当前事件的状态，然后暂停当前事件，重新由 Event loop 进行调度。防止 Event Loop 被事件阻塞。</p>
 <p>还有一种套路，就是把阻塞的事件，交给别的线程来来执行。Event Loop 就可以继续进行事件的循环，防止被阻塞。事实上 Vertx 就是这么操作的。</p>
@@ -566,7 +566,7 @@
 <div class="copyright">
   
   &copy; 
-  <span itemprop="copyrightYear">2020</span>
+  <span itemprop="copyrightYear">2022</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>
