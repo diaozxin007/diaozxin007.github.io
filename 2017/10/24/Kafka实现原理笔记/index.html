@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"xilidou.com","root":"/","images":"/images","scheme":"Pisces","darkmode":false,"version":"8.9.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js"></script>
+<meta name="description" content="最近想了解一下分布式消息系统是怎么组成的于是就花了一些时间研究了kafka的实现原理。记录下来方便自己复习和回忆。kafka的设计思想很精妙，可以借鉴到大部分的分布式系统中。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Kafka实现原理笔记">
+<meta property="og:url" content="https://xilidou.com/2017/10/24/Kafka%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86%E7%AC%94%E8%AE%B0/index.html">
+<meta property="og:site_name" content="犀利豆的博客">
+<meta property="og:description" content="最近想了解一下分布式消息系统是怎么组成的于是就花了一些时间研究了kafka的实现原理。记录下来方便自己复习和回忆。kafka的设计思想很精妙，可以借鉴到大部分的分布式系统中。">
+<meta property="og:locale">
+<meta property="article:published_time" content="2017-10-24T19:04:15.000Z">
+<meta property="article:modified_time" content="2022-01-11T05:08:45.728Z">
+<meta property="article:author" content="Zhengxin Diao">
+<meta property="article:tag" content="Kafka">
+<meta property="article:tag" content="分布式">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://xilidou.com/2017/10/24/Kafka%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86%E7%AC%94%E8%AE%B0/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh","comments":true,"permalink":"https://xilidou.com/2017/10/24/Kafka%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86%E7%AC%94%E8%AE%B0/","path":"2017/10/24/Kafka实现原理笔记/","title":"Kafka实现原理笔记"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Kafka实现原理笔记 | 犀利豆的博客</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?5d32532da741f4430197fd778ea752f1"></script>
+
+  <script async src="//assets.growingio.com/2.1/gio.js"></script>
+  <script class="next-config" data-name="growingio_analytics" type="application/json">"UA-35317601-2"</script>
+  <script src="/js/third-party/analytics/growingio.js"></script>
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="犀利豆的博客" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">犀利豆的博客</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">高质量的技术博客</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li>
+        <li class="menu-item menu-item-java"><a href="/tags/java/" rel="section"><i class="fa fa-th fa-fw"></i>java</a></li>
+        <li class="menu-item menu-item-redis"><a href="/tags/redis/" rel="section"><i class="fa fa-th fa-fw"></i>redis</a></li>
+        <li class="menu-item menu-item-dubbo"><a href="/tags/dubbo/" rel="section"><i class="fa fa-th fa-fw"></i>dubbo</a></li>
+        <li class="menu-item menu-item-tools"><a href="/tags/tools" rel="section"><i class="fa fa-th fa-fw"></i>tools</a></li>
+        <li class="menu-item menu-item-我的朋友们"><a href="/friends" rel="section"><i class="fa fa-user fa-fw"></i>我的朋友们</a></li>
+        <li class="menu-item menu-item-关于我"><a href="/aboutme" rel="section"><i class="fa fa-user fa-fw"></i>关于我</a></li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#kafka%E5%8F%AF%E4%BB%A5%E8%A7%A3%E5%86%B3%E4%BB%80%E4%B9%88%E9%97%AE%E9%A2%98%EF%BC%9F"><span class="nav-number">1.</span> <span class="nav-text">kafka可以解决什么问题？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AE%BE%E8%AE%A1%E7%90%86%E5%BF%B5"><span class="nav-number">2.</span> <span class="nav-text">设计理念</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8C%81%E4%B9%85%E5%8C%96"><span class="nav-number">2.1.</span> <span class="nav-text">持久化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%94%9F%E4%BA%A7%E8%80%85-%EF%BC%88Producer%EF%BC%89"><span class="nav-number">2.2.</span> <span class="nav-text">生产者 （Producer）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B6%88%E8%B4%B9%E8%80%85-%EF%BC%88Consumer%EF%BC%89"><span class="nav-number">2.3.</span> <span class="nav-text">消费者 （Consumer）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#kafka-%E6%B6%88%E6%81%AF%E7%9A%84%E8%AF%AD%E4%B9%89"><span class="nav-number">2.4.</span> <span class="nav-text">kafka 消息的语义</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%87%E4%BB%BD"><span class="nav-number">2.5.</span> <span class="nav-text">备份</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%89%E4%B8%BE"><span class="nav-number">2.6.</span> <span class="nav-text">选举</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Zhengxin Diao</p>
+  <div class="site-description" itemprop="description">北邮本科，University of Leicester EE 研究生，Java后端开发，目前就职阿里</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">43</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">73</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/diaozxin007" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;diaozxin007" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:diaozxin@163.com" title="E-Mail → mailto:diaozxin@163.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/diao-zheng-xin/activities" title="zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;diao-zheng-xin&#x2F;activities" rel="noopener" target="_blank"><i class="zhihu fa-fw"></i>zhihu</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml"><i class="rs fa-fw"></i>RSS</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://xilidou.com/2017/10/24/Kafka%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86%E7%AC%94%E8%AE%B0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Zhengxin Diao">
+      <meta itemprop="description" content="北邮本科，University of Leicester EE 研究生，Java后端开发，目前就职阿里">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="犀利豆的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Kafka实现原理笔记
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2017-10-24 19:04:15" itemprop="dateCreated datePublished" datetime="2017-10-24T19:04:15+00:00">2017-10-24</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2022-01-11 05:08:45" itemprop="dateModified" datetime="2022-01-11T05:08:45+00:00">2022-01-11</time>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>最近想了解一下分布式消息系统是怎么组成的于是就花了一些时间研究了kafka的实现原理。记录下来方便自己复习和回忆。kafka的设计思想很精妙，可以借鉴到大部分的分布式系统中。</p>
+<span id="more"></span>
+
+<h2 id="kafka可以解决什么问题？"><a href="#kafka可以解决什么问题？" class="headerlink" title="kafka可以解决什么问题？"></a>kafka可以解决什么问题？</h2><ul>
+<li>kafka可以支持大量数据吞吐。</li>
+<li>可以优雅的处理数据堆积问题。</li>
+<li>低延迟</li>
+<li>支持分布式</li>
+</ul>
+<h2 id="设计理念"><a href="#设计理念" class="headerlink" title="设计理念"></a>设计理念</h2><h3 id="持久化"><a href="#持久化" class="headerlink" title="持久化"></a>持久化</h3><ol>
+<li>尽量线性的读写磁盘。一个硬盘的顺序读写速度一般是4k读写的千倍以上。线性的读写是可以被预测，也能被操作系统大幅的优化的。</li>
+<li>以pagecache为中心的设计风格，使用文件系统并依赖于pagecache要优于维护内存中缓存或其他结构。一方面避免 JVM 中的 gc带来的性能损耗。同时简化了代码实现。</li>
+<li>持久化队列，只需要简单的在文件后面追加写入即可。而不用考虑建立一个索引文件（BTree）。查询和写入的复杂度由 BTree的 O(logN) 减小为线性的 O(1)。大幅提升数据的吞吐量，有利于处理海量数据，且对存储系统的性能要求不高，降低成本。</li>
+<li>考虑将多条消息聚合在一次。减少平均每条消息的开销。</li>
+<li>使用 <a target="_blank" rel="noopener" href="https://www.ibm.com/developerworks/linux/library/j-zerocopy/">zero-copy</a>减少字符拷贝时候的开销。</li>
+<li>开启压缩协议，减少数据所占的空间。</li>
+</ol>
+<h3 id="生产者-（Producer）"><a href="#生产者-（Producer）" class="headerlink" title="生产者 （Producer）"></a>生产者 （Producer）</h3><ol>
+<li>Producer 向 Leader Partition 发送消息。</li>
+<li>Producer 可以向任何一个 Partition 询问整个集群的状态，以及谁是 Leader Partition</li>
+<li>Producer 自己决定写入到哪个 Partition。Producer 可以考虑使用何种负载的策略。随机，轮询，按照key分区都可以。</li>
+<li>支持批量操作。消息攒够一定数量再发送，使用适当的延迟换来更高的数据吞吐量。</li>
+</ol>
+<h3 id="消费者-（Consumer）"><a href="#消费者-（Consumer）" class="headerlink" title="消费者 （Consumer）"></a>消费者 （Consumer）</h3><ol>
+<li>消费者直接向 Leader Partition发送一个 fatch 的请求，并制定消费的起始位置（offset），取回offset后的一段数据进行处理。</li>
+<li>Consumer 自己决定 Offset，自己决定从什么地方进行消费。</li>
+<li><strong>Push 和 Pull</strong> 的问题。 消息到底是推还是拉？ kafka 采取的机制是，Producer 向 Broker push 消息。 Consumer 向 Broker Pull 消息。这样做有几个好处。第一，消息消费的速率由 Consumer自己决定。第二，可以聚合的数据批量处理数据，如果使用 push，Broker需要考虑到底要等到多条数据，还是及时发送，Consumer可以尽可能多的拉取数据，保证消息尽可能及时被消费。</li>
+<li>如何记录那些消息被<strong>有效消费</strong>？Topic 被划分为多个有序的分区，保证每个分区任何时候只会被同一个Group里面的 Consumer消费。只需要记录消费的偏移量。同时这个位置可以作为CkeckPonit，定时检查。保证ACK的代价很小。</li>
+<li>如果我们可以使用某个 Consumer 消费数据后，存储到 类似Hadoop的平台上持久化。</li>
+</ol>
+<h3 id="kafka-消息的语义"><a href="#kafka-消息的语义" class="headerlink" title="kafka 消息的语义"></a>kafka 消息的语义</h3><ol>
+<li>消息系统系统一般有以下的语义：<ul>
+<li>At most once：消息可能丢失，但不会重复投递</li>
+<li>At least once：消息不会丢失，但可能会重复投递</li>
+<li>Exactly once：消息不丢失、不重复，会且只会被分发一次（真正想要的）</li>
+</ul>
+</li>
+<li>Producer 发送消息以后，有一个commit的概念，如果commit成功，则意味着消息不会丢失，但是Producer有可能提交成功后，没有收到commit的消息。这有可能造成 at least once 语义。</li>
+<li>从 Consumer 角度来看，我们知道 Offset 是由 Consumer 自己维护。所以何时更新 Offset 就决定了 Consumer 的语义。如果收到消息后更新 Offset，如果 Consumer crash，那新的 Cunsumer再次重启消费，就会造成 At most once 语义（消息会丢，但不重复）。</li>
+<li>如果 Consumser 消费完成后，再更新 Offset。如果 Consumer crash，别的 Consumer 重新用这个 Offser 拉取消息，这个时候就会造成 at least once 的语义（消息不丢，但多次被处理）。</li>
+</ol>
+<p>所以结论：默认Kafka提供at-least-once语义的消息分发，允许用户通过在处理消息之前保存位置信息的方式来提供at-most-once语义。如果我们可以实现消费是<strong>幂等</strong>的，这个时候就可以认为整个系统是Exactly once的了。</p>
+<h3 id="备份"><a href="#备份" class="headerlink" title="备份"></a>备份</h3><ol>
+<li>kafka 对每个 topic 的 partiotion 进行备份，份数由用户自己设置。</li>
+<li>默认情况下 kafka 有一个 Leader 和 0至多个 Follower。</li>
+<li>我们可以认为 Follower 也是一个 Consumer，通过消费 Leader 上的日志然后备份到本地。 </li>
+<li>所有的读写都是在 Leader 上进行的，所以 Follower 真的就只是备份。</li>
+<li>kafka 如何确认一个 Follower 是活的？<ul>
+<li>和 zookeeper 保持联系。</li>
+<li>Follower 复制 Leader 上的消息，且落后的不多（可配置）。</li>
+</ul>
+</li>
+<li>消息同步到所有的 Follower 才认为是提交成功，提交成功才能被消费。所以 Leader 宕机不会造成消息丢失（注意之前的Producer的 at least once 语义）。</li>
+</ol>
+<h3 id="选举"><a href="#选举" class="headerlink" title="选举"></a>选举</h3><ol>
+<li>Leader宕机以后，需要在Follower中选出一个新 Leader。 Kafak动态维护一个同步备份集合（ISR）。这个集合中的 Follower 都能成为 Leader。 一个写入，要同步到所有的 ISR 中才能算做 Commit 成功。同时 ISR 会被持久化到 ZK 中。</li>
+<li>如果全部节点都故障了，kafka会选择第一副本（无需在ISR中） 作为Leader。这个时候会造成丢消息。</li>
+<li>Producer 可以选择是否等待备份响应。所谓的备份相应，是指 ISR 集合中的备份响应。</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Kafka/" rel="tag"># Kafka</a>
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F/" rel="tag"># 分布式</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2017/10/24/%E3%80%8A%E4%BA%A4%E6%98%93%E7%B3%BB%E7%BB%9F%EF%BC%9A%E6%9B%B4%E6%96%B0%E4%B8%8E%E8%B7%A8%E8%B6%8A%E3%80%8B%E8%AF%BB%E5%90%8E%E7%AC%94%E8%AE%B0/" rel="prev" title="《交易系统：更新与跨越》读后笔记">
+                  <i class="fa fa-chevron-left"></i> 《交易系统：更新与跨越》读后笔记
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2017/10/24/%E6%9C%89%E9%81%93-Alfred-Workflow-%E5%A8%81%E5%8A%9B%E5%8A%A0%E5%BC%BA%E7%89%88/" rel="next" title="有道 Alfred Workflow 威力加强版">
+                  有道 Alfred Workflow 威力加强版 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="noopener" target="_blank">京ICP备17065467号-1 </a>
+  </div>
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Zhengxin Diao</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.5.0/pjax.min.js" integrity="sha256-3NkoLDrmHLTYj7csHIZSr0MHAFTXth7Ua/DDt4MRUAg=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script><script src="/js/pjax.js"></script>
+
+  
+
+
+
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"xilidou.com","root":"/","images":"/images","scheme":"Pisces","darkmode":false,"version":"8.9.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js"></script>
+<meta name="description" content="原文地址：https:&#x2F;&#x2F;www.xilidou.com&#x2F;2018&#x2F;03&#x2F;13&#x2F;redis-data2&#x2F; 上篇文章写了 Redis 基础数据结构的可变字符串、链表、字典。大家可以点击链接查看。今天我们继续研究 Redis 的基础数据结构。  整数集合 跳跃表 压缩列表">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis 的基础数据结构（二） 整数集合、跳跃表、压缩列表">
+<meta property="og:url" content="https://xilidou.com/2018/03/13/redis-data2/index.html">
+<meta property="og:site_name" content="犀利豆的博客">
+<meta property="og:description" content="原文地址：https:&#x2F;&#x2F;www.xilidou.com&#x2F;2018&#x2F;03&#x2F;13&#x2F;redis-data2&#x2F; 上篇文章写了 Redis 基础数据结构的可变字符串、链表、字典。大家可以点击链接查看。今天我们继续研究 Redis 的基础数据结构。  整数集合 跳跃表 压缩列表">
+<meta property="og:locale">
+<meta property="og:image" content="https://xilidou.com/images/zskiplist.jpg">
+<meta property="og:image" content="https://xilidou.com/images/ziplist.jpg">
+<meta property="og:image" content="https://xilidou.com/images/2019-04-25-022203.jpg">
+<meta property="article:published_time" content="2018-03-13T22:14:00.000Z">
+<meta property="article:modified_time" content="2022-01-11T05:08:45.728Z">
+<meta property="article:author" content="Zhengxin Diao">
+<meta property="article:tag" content="redis">
+<meta property="article:tag" content="iniset">
+<meta property="article:tag" content="skiplist">
+<meta property="article:tag" content="ziplist">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://xilidou.com/images/zskiplist.jpg">
+
+
+<link rel="canonical" href="https://xilidou.com/2018/03/13/redis-data2/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh","comments":true,"permalink":"https://xilidou.com/2018/03/13/redis-data2/","path":"2018/03/13/redis-data2/","title":"Redis 的基础数据结构（二） 整数集合、跳跃表、压缩列表"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Redis 的基础数据结构（二） 整数集合、跳跃表、压缩列表 | 犀利豆的博客</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?5d32532da741f4430197fd778ea752f1"></script>
+
+  <script async src="//assets.growingio.com/2.1/gio.js"></script>
+  <script class="next-config" data-name="growingio_analytics" type="application/json">"UA-35317601-2"</script>
+  <script src="/js/third-party/analytics/growingio.js"></script>
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="犀利豆的博客" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">犀利豆的博客</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">高质量的技术博客</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li>
+        <li class="menu-item menu-item-java"><a href="/tags/java/" rel="section"><i class="fa fa-th fa-fw"></i>java</a></li>
+        <li class="menu-item menu-item-redis"><a href="/tags/redis/" rel="section"><i class="fa fa-th fa-fw"></i>redis</a></li>
+        <li class="menu-item menu-item-dubbo"><a href="/tags/dubbo/" rel="section"><i class="fa fa-th fa-fw"></i>dubbo</a></li>
+        <li class="menu-item menu-item-tools"><a href="/tags/tools" rel="section"><i class="fa fa-th fa-fw"></i>tools</a></li>
+        <li class="menu-item menu-item-我的朋友们"><a href="/friends" rel="section"><i class="fa fa-user fa-fw"></i>我的朋友们</a></li>
+        <li class="menu-item menu-item-关于我"><a href="/aboutme" rel="section"><i class="fa fa-user fa-fw"></i>关于我</a></li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%95%B4%E6%95%B0%E9%9B%86%E5%90%88"><span class="nav-number">1.</span> <span class="nav-text">整数集合</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%B7%B3%E8%B7%83%E8%A1%A8"><span class="nav-number">2.</span> <span class="nav-text">跳跃表</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8E%8B%E7%BC%A9%E5%88%97%E8%A1%A8"><span class="nav-number">3.</span> <span class="nav-text">压缩列表</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Zhengxin Diao</p>
+  <div class="site-description" itemprop="description">北邮本科，University of Leicester EE 研究生，Java后端开发，目前就职阿里</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">43</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">73</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/diaozxin007" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;diaozxin007" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:diaozxin@163.com" title="E-Mail → mailto:diaozxin@163.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/diao-zheng-xin/activities" title="zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;diao-zheng-xin&#x2F;activities" rel="noopener" target="_blank"><i class="zhihu fa-fw"></i>zhihu</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml"><i class="rs fa-fw"></i>RSS</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://xilidou.com/2018/03/13/redis-data2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Zhengxin Diao">
+      <meta itemprop="description" content="北邮本科，University of Leicester EE 研究生，Java后端开发，目前就职阿里">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="犀利豆的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Redis 的基础数据结构（二） 整数集合、跳跃表、压缩列表
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2018-03-13 22:14:00" itemprop="dateCreated datePublished" datetime="2018-03-13T22:14:00+00:00">2018-03-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2022-01-11 05:08:45" itemprop="dateModified" datetime="2022-01-11T05:08:45+00:00">2022-01-11</time>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>原文地址：<a target="_blank" rel="noopener" href="https://www.xilidou.com/2018/03/13/redis-data2/">https://www.xilidou.com/2018/03/13/redis-data2/</a></p>
+<p>上篇文章写了 Redis 基础数据结构的可变字符串、链表、字典。大家可以点击<a href="https://xilidou.com/2018/03/12/redis-data/">链接</a>查看。今天我们继续研究 Redis 的基础数据结构。</p>
+<ul>
+<li>整数集合</li>
+<li>跳跃表</li>
+<li>压缩列表</li>
+</ul>
+<span id="more"></span>
+
+<h1 id="整数集合"><a href="#整数集合" class="headerlink" title="整数集合"></a>整数集合</h1><p>当一个集合只包含整数，且这个集合的元素不多的时候，Redis 就会使用整数集合 intset 。首先看 intset 的数据结构：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">intset</span> &#123;</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 编码方式</span></span><br><span class="line">    <span class="keyword">uint32_t</span> encoding;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 集合包含的元素数量</span></span><br><span class="line">    <span class="keyword">uint32_t</span> length;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 保存元素的数组</span></span><br><span class="line">    <span class="keyword">int8_t</span> contents[];</span><br><span class="line">&#125; intset;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>其实 intset 的数据结构比较好理解。一个数据保存元素，length 保存元素的数量，也就是contents的大小，encoding 用于保存数据的编码方式。</p>
+<p>通过代码我们可以知道，encoding 的编码类型包括了：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> INTSET_ENC_INT16 (sizeof(int16_t))</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> INTSET_ENC_INT32 (sizeof(int32_t))</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> INTSET_ENC_INT64 (sizeof(int64_t))</span></span><br></pre></td></tr></table></figure>
+
+<p>实际上我们可以看出来。 Redis encoding的类型，就是指数据的大小。作为一个内存数据库，采用这种设计就是为了节约内存。</p>
+<p>既然有从小到大的三个数据结构，在插入数据的时候尽可能使用小的数据结构来节约内存，如果插入的数据大于原有的数据结构，就会触发扩容。</p>
+<p>扩容有三个步骤：</p>
+<ol>
+<li>根据新元素的类型，修改整个数组的数据类型，并重新分配空间</li>
+<li>将原有的的数据，装换为新的数据类型，重新放到应该在的位置上，且保存顺序性</li>
+<li>再插入新元素</li>
+</ol>
+<p>整数集合不支持降级操作，一旦升级就不能降级了。</p>
+<h1 id="跳跃表"><a href="#跳跃表" class="headerlink" title="跳跃表"></a>跳跃表</h1><p>跳跃表是链表的一种，是一种利用空间换时间的数据结构。跳表平均支持 O(logN)，最坏O(N)复杂度的查找。</p>
+<p>跳表是由一个zskiplist 和 多个 zskiplistNode 组成。我们先看看他们的结构：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">/* ZSETs use a specialized version of Skiplists */</span></span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * 跳跃表节点</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistNode</span> &#123;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 成员对象</span></span><br><span class="line">    robj *obj;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 分值</span></span><br><span class="line">    <span class="keyword">double</span> score;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 后退指针</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistNode</span> *<span class="title">backward</span>;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 层</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistLevel</span> &#123;</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">// 前进指针</span></span><br><span class="line">        <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistNode</span> *<span class="title">forward</span>;</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">// 跨度</span></span><br><span class="line">        <span class="keyword">unsigned</span> <span class="keyword">int</span> span;</span><br><span class="line"></span><br><span class="line">    &#125; level[];</span><br><span class="line"></span><br><span class="line">&#125; zskiplistNode;</span><br><span class="line"></span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * 跳跃表</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">zskiplist</span> &#123;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 表头节点和表尾节点</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistNode</span> *<span class="title">header</span>, *<span class="title">tail</span>;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 表中节点的数量</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span> length;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 表中层数最大的节点的层数</span></span><br><span class="line">    <span class="keyword">int</span> level;</span><br><span class="line"></span><br><span class="line">&#125; zskiplist;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>所以根据这个代码我们可以画出如下的结构图：</p>
+<p><img src="/images/zskiplist.jpg" alt="zskiplist"></p>
+<p>其实跳表就是一个利用空间换时间的数据结构，利用 level 作为链表的索引。</p>
+<p>之前有人问过 Redis 的作者 为什么使用跳跃表，而不是 tree 来构建索引？作者的回答是：</p>
+<ol>
+<li>省内存。</li>
+<li>服务于 ZRANGE 或者 ZREVRANGE 是一个典型的链表场景。时间复杂度的表现和平衡树差不多。</li>
+<li>最重要的一点是跳跃表的实现很简单就能达到 O(logN)的级别。</li>
+</ol>
+<h1 id="压缩列表"><a href="#压缩列表" class="headerlink" title="压缩列表"></a>压缩列表</h1><p>压缩链表 Redis 作者的介绍是，为了尽可能节约内存设计出来的双向链表。</p>
+<p>对于一个压缩列表代码里注释给出的数据结构如下：</p>
+<p><img src="/images/ziplist.jpg" alt="ziplist"></p>
+<p><code>zlbytes</code> 表示的是整个压缩列表使用的内存字节数</p>
+<p><code>zltail</code> 指定了压缩列表的尾节点的偏移量</p>
+<p><code>zllen</code> 是压缩列表 entry 的数量</p>
+<p><code>entry</code> 就是 ziplist 的节点</p>
+<p><code>zlend</code> 标记压缩列表的末端</p>
+<p>这个列表中还有单个指针：</p>
+<p><code>ZIPLIST_ENTRY_HEAD</code> 列表开始节点的头偏移量</p>
+<p><code>ZIPLIST_ENTRY_TAIL</code> 列表结束节点的头偏移量</p>
+<p><code>ZIPLIST_ENTRY_END</code> 列表的尾节点结束的偏移量</p>
+<p>再看看一个 entry 的结构：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * 保存 ziplist 节点信息的结构</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">zlentry</span> &#123;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// prevrawlen ：前置节点的长度</span></span><br><span class="line">    <span class="comment">// prevrawlensize ：编码 prevrawlen 所需的字节大小</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> prevrawlensize, prevrawlen;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// len ：当前节点值的长度</span></span><br><span class="line">    <span class="comment">// lensize ：编码 len 所需的字节大小</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> lensize, len;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 当前节点 header 的大小</span></span><br><span class="line">    <span class="comment">// 等于 prevrawlensize + lensize</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> headersize;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 当前节点值所使用的编码类型</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">char</span> encoding;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 指向当前节点的指针</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">char</span> *p;</span><br><span class="line"></span><br><span class="line">&#125; zlentry;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>依次解释一下这几个参数。</p>
+<p><code>prevrawlen</code> 前置节点的长度，这里多了一个 size，其实是记录了 prevrawlen 的尺寸。Redis 为了节约内存并不是直接使用默认的 int 的长度，而是逐渐升级的。<br>同理 <code>len</code> 记录的是当前节点的长度，<code>lensize</code> 记录的是 len 的长度。<br><code>headersize</code> 就是前文提到的两个 size 之和。<br><code>encoding</code> 就是这个节点的数据类型。这里注意一下 encoding 的类型只包括整数和字符串。<br><code>p</code> 节点的指针，不用过多的解释。</p>
+<p>需要注意一点，因为每个节点都保存了前一个节点的长度，如果发生了更新或者删除节点，则这个节点之后的数据也需要修改，有一种最坏的情况就是如果每个节点都处于需要扩容的零界点，就会造成这个节点之后的节点都要修改 size 这个参数，引发连锁反应。这个时候就是 压缩链表最坏的时间复杂度 O(n^2)。不过所有节点都处于临界值，这样的概率可以说比较小。</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>至此Redis的基本数据结构就介绍完了。我们可以看到 Redis 对内存的使用真是“斤斤计较”，对于内存是使用特别节约。同时 Redis 作为一个单线程应用，不用考虑并发的问题，将很多类似 size 或者 length 的参数暴露出来，将很多 O(n) 的操作降低为 O(1)。大大提升效率。下一讲，将会介绍 Redis 是怎么通过这些数据结构向外提供服务。<br>Redis 的代码真是写的太棒了，简洁高效。值得大家学习。</p>
+<p>欢迎关注我的微信公众号：<br><img src="/images/2019-04-25-022203.jpg" alt="二维码"></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/redis/" rel="tag"># redis</a>
+              <a href="/tags/iniset/" rel="tag"># iniset</a>
+              <a href="/tags/skiplist/" rel="tag"># skiplist</a>
+              <a href="/tags/ziplist/" rel="tag"># ziplist</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2018/03/12/redis-data/" rel="prev" title="Redis 的基础数据结构（一） 可变字符串、链表、字典">
+                  <i class="fa fa-chevron-left"></i> Redis 的基础数据结构（一） 可变字符串、链表、字典
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2018/03/15/redis-object/" rel="next" title="Redis 的基础数据结构（三）对象">
+                  Redis 的基础数据结构（三）对象 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="noopener" target="_blank">京ICP备17065467号-1 </a>
+  </div>
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Zhengxin Diao</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.5.0/pjax.min.js" integrity="sha256-3NkoLDrmHLTYj7csHIZSr0MHAFTXth7Ua/DDt4MRUAg=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script><script src="/js/pjax.js"></script>
+
+  
+
+
+
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+</body>
+</html>

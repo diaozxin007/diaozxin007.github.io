@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"xilidou.com","root":"/","images":"/images","scheme":"Pisces","darkmode":false,"version":"8.9.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js"></script>
+<meta name="description" content="最近研究 Vetrx 简直爱不释手。迫不及待的想给大家介绍一下。  Vertx 是什么 Vertx 是一个运行在 JVM 上，用来构建响应式应用的工具集。 基于 netty 的高性能的，异步的网络库。 对 netty 进行了封装，提供更加友好的 API。 同时实现了一些基于异步调用的库，包括database connection, monitoring, authentication, loggi">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Vertx入门到实战—实现钉钉机器人内网穿透代理">
+<meta property="og:url" content="https://xilidou.com/2020/04/12/vertx-dingding/index.html">
+<meta property="og:site_name" content="犀利豆的博客">
+<meta property="og:description" content="最近研究 Vetrx 简直爱不释手。迫不及待的想给大家介绍一下。  Vertx 是什么 Vertx 是一个运行在 JVM 上，用来构建响应式应用的工具集。 基于 netty 的高性能的，异步的网络库。 对 netty 进行了封装，提供更加友好的 API。 同时实现了一些基于异步调用的库，包括database connection, monitoring, authentication, loggi">
+<meta property="og:locale">
+<meta property="og:image" content="https://xilidou.com/images/carbon.png">
+<meta property="og:image" content="https://xilidou.com/images/event-loop.png">
+<meta property="og:image" content="https://xilidou.com/images/verticle-threading-config.png">
+<meta property="og:image" content="https://xilidou.com/images/event-bus.png">
+<meta property="og:image" content="https://xilidou.com/images/2019-04-25-022202.jpg">
+<meta property="article:published_time" content="2020-04-12T16:39:16.000Z">
+<meta property="article:modified_time" content="2022-01-11T05:08:45.732Z">
+<meta property="article:author" content="Zhengxin Diao">
+<meta property="article:tag" content="java">
+<meta property="article:tag" content="vertx">
+<meta property="article:tag" content="dingding">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://xilidou.com/images/carbon.png">
+
+
+<link rel="canonical" href="https://xilidou.com/2020/04/12/vertx-dingding/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh","comments":true,"permalink":"https://xilidou.com/2020/04/12/vertx-dingding/","path":"2020/04/12/vertx-dingding/","title":"Vertx入门到实战—实现钉钉机器人内网穿透代理"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Vertx入门到实战—实现钉钉机器人内网穿透代理 | 犀利豆的博客</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?5d32532da741f4430197fd778ea752f1"></script>
+
+  <script async src="//assets.growingio.com/2.1/gio.js"></script>
+  <script class="next-config" data-name="growingio_analytics" type="application/json">"UA-35317601-2"</script>
+  <script src="/js/third-party/analytics/growingio.js"></script>
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="犀利豆的博客" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">犀利豆的博客</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">高质量的技术博客</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li>
+        <li class="menu-item menu-item-java"><a href="/tags/java/" rel="section"><i class="fa fa-th fa-fw"></i>java</a></li>
+        <li class="menu-item menu-item-redis"><a href="/tags/redis/" rel="section"><i class="fa fa-th fa-fw"></i>redis</a></li>
+        <li class="menu-item menu-item-dubbo"><a href="/tags/dubbo/" rel="section"><i class="fa fa-th fa-fw"></i>dubbo</a></li>
+        <li class="menu-item menu-item-tools"><a href="/tags/tools" rel="section"><i class="fa fa-th fa-fw"></i>tools</a></li>
+        <li class="menu-item menu-item-我的朋友们"><a href="/friends" rel="section"><i class="fa fa-user fa-fw"></i>我的朋友们</a></li>
+        <li class="menu-item menu-item-关于我"><a href="/aboutme" rel="section"><i class="fa fa-user fa-fw"></i>关于我</a></li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Vertx-%E6%98%AF%E4%BB%80%E4%B9%88"><span class="nav-number">1.</span> <span class="nav-text">Vertx 是什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E6%88%91%E6%8E%A8%E8%8D%90%E5%AD%A6%E4%B9%A0"><span class="nav-number">2.</span> <span class="nav-text">为什么我推荐学习</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Vertx-%E7%9A%84%E5%87%A0%E4%B8%AA%E9%87%8D%E8%A6%81%E6%A6%82%E5%BF%B5"><span class="nav-number">3.</span> <span class="nav-text">Vertx 的几个重要概念</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Event-Loop"><span class="nav-number">3.1.</span> <span class="nav-text">Event Loop</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Verticle"><span class="nav-number">3.2.</span> <span class="nav-text">Verticle</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Event-bus"><span class="nav-number">3.3.</span> <span class="nav-text">Event bus</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9E%E5%88%B0-Vertx"><span class="nav-number">4.</span> <span class="nav-text">回到 Vertx</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Don%E2%80%99t-call-us-we%E2%80%99ll-call-you"><span class="nav-number">4.1.</span> <span class="nav-text">Don’t call us, we’ll call you</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Don%E2%80%99t-block-me"><span class="nav-number">4.2.</span> <span class="nav-text">Don’t block me</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8D%8F%E8%B0%83%E5%BC%82%E6%AD%A5%E5%A4%84%E7%90%86"><span class="nav-number">5.</span> <span class="nav-text">协调异步处理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Event-Bus"><span class="nav-number">6.</span> <span class="nav-text">Event Bus</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%92%89%E9%92%89%E5%86%85%E7%BD%91%E7%A9%BF%E9%80%8F%E4%BB%A3%E7%90%86%E7%9A%84%E7%9A%84%E5%BC%80%E5%8F%91"><span class="nav-number">7.</span> <span class="nav-text">钉钉内网穿透代理的的开发</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%88%E6%9D%A5%E4%B8%80%E4%B8%AA-Verticle"><span class="nav-number">7.1.</span> <span class="nav-text">先来一个 Verticle</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#HttpService-%E7%9A%84%E5%88%9B%E5%BB%BA"><span class="nav-number">7.2.</span> <span class="nav-text">HttpService 的创建</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#WebSocketService"><span class="nav-number">7.3.</span> <span class="nav-text">WebSocketService</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Event-Bus-%E7%9A%84%E4%BD%BF%E7%94%A8"><span class="nav-number">7.4.</span> <span class="nav-text">Event Bus 的使用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%9D%E5%A7%8B%E5%8C%96-Vertx"><span class="nav-number">7.5.</span> <span class="nav-text">初始化 Vertx</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">8.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%9B%B8%E5%85%B3%E8%BF%9E%E6%8E%A5"><span class="nav-number">9.</span> <span class="nav-text">相关连接</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Zhengxin Diao</p>
+  <div class="site-description" itemprop="description">北邮本科，University of Leicester EE 研究生，Java后端开发，目前就职阿里</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">43</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">73</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/diaozxin007" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;diaozxin007" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:diaozxin@163.com" title="E-Mail → mailto:diaozxin@163.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/diao-zheng-xin/activities" title="zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;diao-zheng-xin&#x2F;activities" rel="noopener" target="_blank"><i class="zhihu fa-fw"></i>zhihu</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml"><i class="rs fa-fw"></i>RSS</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://xilidou.com/2020/04/12/vertx-dingding/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Zhengxin Diao">
+      <meta itemprop="description" content="北邮本科，University of Leicester EE 研究生，Java后端开发，目前就职阿里">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="犀利豆的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Vertx入门到实战—实现钉钉机器人内网穿透代理
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2020-04-12 16:39:16" itemprop="dateCreated datePublished" datetime="2020-04-12T16:39:16+00:00">2020-04-12</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2022-01-11 05:08:45" itemprop="dateModified" datetime="2022-01-11T05:08:45+00:00">2022-01-11</time>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>最近研究 Vetrx 简直爱不释手。迫不及待的想给大家介绍一下。</p>
+<p><img src="/images/carbon.png" alt="carbon"></p>
+<h2 id="Vertx-是什么"><a href="#Vertx-是什么" class="headerlink" title="Vertx 是什么"></a>Vertx 是什么</h2><ul>
+<li>Vertx 是一个运行在 JVM 上，用来构建响应式应用的工具集。</li>
+<li>基于 netty 的高性能的，异步的网络库。</li>
+<li>对 netty 进行了封装，提供更加友好的 API。</li>
+<li>同时实现了一些基于异步调用的库，包括database connection, monitoring, authentication, logging, service discovery, clustering support, etc。</li>
+</ul>
+<span id="more"></span>
+
+<h2 id="为什么我推荐学习"><a href="#为什么我推荐学习" class="headerlink" title="为什么我推荐学习"></a>为什么我推荐学习</h2><p>其实随着技术的发展。异步调用其实越来越普及了。</p>
+<p>1、现在随着 RPC 的普及。类似 Dubbo 这样的框架都是基于 NIO 的概念带来的，了解异步编程有助于学习理解框架。</p>
+<p>2、响应式编程逐渐由客户端，前端向后端渗透。</p>
+<p>3、更容易的编写出高性能的异步服务。</p>
+<h2 id="Vertx-的几个重要概念"><a href="#Vertx-的几个重要概念" class="headerlink" title="Vertx 的几个重要概念"></a>Vertx 的几个重要概念</h2><h3 id="Event-Loop"><a href="#Event-Loop" class="headerlink" title="Event Loop"></a>Event Loop</h3><p>Event Loop 顾名思义，就是事件循环的。在 Vertx 的生命周期内，会不断的轮询查询事件。</p>
+<p>传统的多线程编程模型，每个请求就 fork 一个新的线程对请求进行处理。这样的编程模型有实现起来比较简单，一个连接对应一个线程，如果有大量的请求需要处理，就需要 fork 出大量的线程进行处理，对于操作系统来说调度大量线程造成系统 load 升高。</p>
+<p>所以为了能够处理大量请求，就需要过渡到基于 Roactor 模型的 Event Loop上。</p>
+<p><img src="/images/event-loop.png" alt="/images//event-loop.png"></p>
+<p>官网的这个图就很形象了。Eventloop 不断的轮训，获取事件然后安排上不同的 Handler 处理对应的Event。</p>
+<p>这里要注意的是为了保证程序的正常运行，event 必须是非阻塞的。否则就会造成 eventloop 的阻塞，影响Vertx 的表现。但是现实中的程序肯定不能保证都是非阻塞的，Vertx 也提供了相应的处理阻塞的方法的机制。我们在下面会继续介绍。</p>
+<h3 id="Verticle"><a href="#Verticle" class="headerlink" title="Verticle"></a>Verticle</h3><p>在 Vertx 中我们经常可以看见 Vertical 组件。</p>
+<p><img src="/images/verticle-threading-config.png" alt="verticle"></p>
+<p>Verticle 是由 Vert.x 部署和运行的代码块。默认情况一个 Vert.x 实例维护了N（默认情况下N = CPU核数 x 2）个 Event Loop 线程。Verticle 实例可使用任意 Vert.x 支持的编程语言编写，而且一个简单的应用程序也可以包含多种语言编写的 Verticle。</p>
+<p>您可以将 Verticle 想成 <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Actor_model">Actor Model</a> 中的 Actor。</p>
+<p>一个应用程序通常是由在同一个 Vert.x 实例中同时运行的许多 Verticle 实例组合而成。不同的 Verticle 实例通过向 Event Bus 收发送消息来相互通信。</p>
+<h3 id="Event-bus"><a href="#Event-bus" class="headerlink" title="Event bus"></a>Event bus</h3><p>Vertx 中的 Event bus 如果类比后端常用的 MQ 就更加容易理解了。实际上 Event Bus 就是 Verticle 之间传递 信息的桥梁。</p>
+<p>换句话说，就是 Java 通用设计模式中的监听模式，或者是我们常说的 基于 MQ 消息开发模式。</p>
+<p><img src="/images/event-bus.png" alt="Event bus"></p>
+<h2 id="回到-Vertx"><a href="#回到-Vertx" class="headerlink" title="回到 Vertx"></a>回到 Vertx</h2><p>上文我们讨论了 vertx 的模型和机制，现在人们就看看怎么使用 vertx 开发一个程序。</p>
+<p>我会结合之前写的 暴打钉三多的来进行讲解,一切从 Vertx 开始。</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">val</span> vertx = Vertx.vertx()</span><br></pre></td></tr></table></figure>
+
+<p>vertx 是整个 vert.x 框架的核心。通常来说 Vertx 所有的行为就是从 vertx 这个类中产生的。</p>
+<h3 id="Don’t-call-us-we’ll-call-you"><a href="#Don’t-call-us-we’ll-call-you" class="headerlink" title="Don’t call us, we’ll call you"></a>Don’t call us, we’ll call you</h3><p>Vert.x 是一个事件驱动框架。所谓事件驱动是指当某件事情发生以后，就做这个动作。</p>
+<p>我们再回到标题， “Don’t call us, we’ll call you” 这个原则，其实就是当我们 发现你能完成这项工的时候，我们会找你的。你不需要主动来联系我。</p>
+<p>我们通过代码来理解一下 Vertx 是怎么实现这个原则的 ：</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">server.requestHandler(request -&gt; &#123;</span><br><span class="line">  request.response().end(<span class="string">&quot;hello world!&quot;</span>);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<p>这个代码块的意思是，每当 server 的 request 被调用的时候，就返回一个 <code>hello world</code> 。</p>
+<p>所以 Vertx 中的 ‘you’ j就是各种各样的 Handler 。大多数时候我们编写 Vertx 的程序，实际上就是在编写Handler 的行为。然后再告诉 Vertx ，每当 XXX 事件触发以后，你就调用 XXX Handler。</p>
+<h3 id="Don’t-block-me"><a href="#Don’t-block-me" class="headerlink" title="Don’t block me"></a>Don’t block me</h3><p>Vertx 是基于事件的，上文我们提到了 Event Loop ，在 Vertx 中，EventLoop 就是一个勤劳的小蜜蜂，不断的去寻找，到底有哪些事件被触发了。然后再执行对应的 Handler。假如执行 Hanlder 的线程，就是 Event Loop 线程。如过 Handler 执行的时间过长。就会阻塞 Event Loop 。造成别的事件触发的时候。Event Loop 还在处理时间花费较长的 Handler。Event loop就不及时的响应其他的事。</p>
+<p>但是现实中，不可能所有的事件 都是非阻塞的。比如查询数据库，调用远程接口等等，那怎么办呢？</p>
+<p>在事件驱动模型中，大概有两种套路解决，这个问题，比如在 Redis 中，Redis 会十分小心的维护一个时间分片。当某个人物执行事件过长的话，就保存当前事件的状态，然后暂停当前事件，重新由 Event loop 进行调度。防止 Event Loop 被事件阻塞。</p>
+<p>还有一种套路，就是把阻塞的事件，交给别的线程来来执行。Event Loop 就可以继续进行事件的循环，防止被阻塞。事实上 Vertx 就是这么操作的。</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">vertx.executeBlocking(promise -&gt; &#123;</span><br><span class="line">  <span class="comment">// Call some blocking API that takes a significant amount of time to return</span></span><br><span class="line">  String result = someAPI.blockingMethod(<span class="string">&quot;hello&quot;</span>);</span><br><span class="line">  promise.complete(result);</span><br><span class="line">&#125;, res -&gt; &#123;</span><br><span class="line">  System.<span class="keyword">out</span>.println(<span class="string">&quot;The result is: &quot;</span> + res.result());</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<p>如果我们开发的时候意识到这个 Handler 是一个阻塞的，就需要告诉 vertx 这是是一个 Blocking 的需要交给别的线程来处理。</p>
+<h2 id="协调异步处理"><a href="#协调异步处理" class="headerlink" title="协调异步处理"></a>协调异步处理</h2><p>上文提到. Vertx 是通过 Handler 来处理事件的，但是，很多时候，某个操作，通常需要不止一个 Handler 来对数据进行处理。如果一直使用 callback 的写法，就会形成箭头代码。产生地狱回调的问题。</p>
+<p>作为一个异步框架，Vertx 一般使用 Future 来解决回调地狱的问题。理解 Vertx 中的 Future 是编写好的代码的核心。</p>
+<p>通常我们理解 Future 只是一个占位符，代表某个操作未来某个时候的结果。不太清楚的可以看我以前写文章。</p>
+<p>这里需要特别指出的是 Vertx 的 Future 和 Jdk 里面的 <code>CompletableFuture</code> 原理和理念类似，但是使用起来有很大的区别的。</p>
+<p>Jdk 里面的 <code>CompletableFuture</code> 是可以直接使用 <code>result()</code> 阻塞的等待结果，但是 Vertx 中的 Future 如果直接使用 <code>result()</code> ，就会立刻从 Future 中取出结果，而不是阻塞的等待结果，就很容易收获一个 Null。</p>
+<p>明确这个区别以后，写起代码就不会出错了。</p>
+<h2 id="Event-Bus"><a href="#Event-Bus" class="headerlink" title="Event Bus"></a>Event Bus</h2><p>如果在日常开发中使用过消息系统，就很容易理解 Vertx 中的 Event bus 了。官方文档把 Event bus 比作 Vertx 的神经系统，其实我们就认为，Event bus是 Vertx 的消息系统，就好了。</p>
+<h2 id="钉钉内网穿透代理的的开发"><a href="#钉钉内网穿透代理的的开发" class="headerlink" title="钉钉内网穿透代理的的开发"></a>钉钉内网穿透代理的的开发</h2><p>这个小 Demo 麻雀虽小但是包含了 Vertx 几个关键组件的使用。写这个 Demo 的时候，正好在学习 Kotlin 所以顺手就用 kotlin 写了。如果写过 Java 或者 Typescript 那你也能很容易的看懂。</p>
+<p>项目包含了</p>
+<ul>
+<li>Http Service 用于接收钉钉的回调</li>
+<li>WebSocket Service 用于向 Client 推送收到的回调，达到内网穿透的目的。</li>
+<li>Vertx Config 用于配置项目相关参数，便于使用</li>
+<li>Event Bus 的使用，用于 Http Service 和 WebSocket 之间传递消息。</li>
+</ul>
+<h3 id="先来一个-Verticle"><a href="#先来一个-Verticle" class="headerlink" title="先来一个 Verticle"></a>先来一个 Verticle</h3><p>Gradle 配置文件如下先引入包：</p>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">implementation (<span class="string">&quot;io.vertx:vertx-core:3.8.5&quot;</span>)</span><br><span class="line">implementation (<span class="string">&quot;io.vertx:vertx-web:3.8.5&quot;</span>)</span><br><span class="line">implementation (<span class="string">&quot;io.vertx:vertx-lang-kotlin:3.8.5&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<p>上文我我们已经介绍了 Verticle 是什么了，为了方便开发，Vertx 给我们提供了一个  AbstractVerticle 抽象类。直接继承：</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">DingVerticle</span> : <span class="type">AbstractVerticle</span></span>() &#123;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>AbstractVerticle</code> 中包含了 Vericle 常用的一些方法。</p>
+<p>我们可以重写 <code>start()</code> 方法,来初始化我们 Verticle 的行为。</p>
+<h3 id="HttpService-的创建"><a href="#HttpService-的创建" class="headerlink" title="HttpService 的创建"></a>HttpService 的创建</h3><figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">override</span> <span class="function"><span class="keyword">fun</span> <span class="title">start</span><span class="params">()</span></span> &#123;</span><br><span class="line">    <span class="keyword">val</span> httpServer = vertx.createHttpServer()</span><br><span class="line">    <span class="keyword">val</span> router = Router.router(vertx)</span><br><span class="line">    router.post(<span class="string">&quot;/ding/api&quot;</span>).handler&#123;event -&gt;</span><br><span class="line">        <span class="keyword">val</span> request = event.request()</span><br><span class="line">        request.bodyHandler &#123; t -&gt;</span><br><span class="line">            println(t)</span><br><span class="line">        &#125;</span><br><span class="line">        event.response().end();</span><br><span class="line">    &#125;</span><br><span class="line">    httpServer.requestHandler(router);</span><br><span class="line">    httpServer.listen(<span class="number">8080</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>代码比较简单:</p>
+<ol>
+<li>创建一个 httpService</li>
+<li>设置一个 Router，如果写过 Spring Mvc 相关的代码。这里的 Router 就类似 Controller 里面的 RequestMapping 。用于指定一个 Http 请求 URI 和 Method 对应的 Handler。这里的 Handler 是一个 lambda 表达式。只是简单的把请求的 body 打印出来。</li>
+<li>将 Router 加入到 httpService 中，并监听 8080 端口。</li>
+</ol>
+<h3 id="WebSocketService"><a href="#WebSocketService" class="headerlink" title="WebSocketService"></a>WebSocketService</h3><p>webSocket协议是这个 proxy 的关键，因为 WebSocket 不同于 Http，是双向通通信的。依赖这个特性我们可以把消息“推到”内网。达到内网“穿透”的目的。</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">httpServer.webSocketHandler &#123; webSocket: ServerWebSocket -&gt;</span><br><span class="line">    <span class="keyword">val</span> binaryHandlerID = webSocket.binaryHandlerID()</span><br><span class="line">    webSocket.endHandler() &#123;</span><br><span class="line">        log.info(<span class="string">&quot;end&quot;</span>, binaryHandlerID)</span><br><span class="line">    &#125;</span><br><span class="line">    webSocket.writeTextMessage(<span class="string">&quot;欢迎使用 xilidou 钉钉 代理&quot;</span>)</span><br><span class="line">    webSocket.writeTextMessage(<span class="string">&quot;连接成功&quot;</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>代码也比较简单，就是向 Vertx 注册一个处理 WebSocket 的 Handler。</p>
+<h3 id="Event-Bus-的使用"><a href="#Event-Bus-的使用" class="headerlink" title="Event Bus 的使用"></a>Event Bus 的使用</h3><p>作为代理最核心的功能就是转发钉钉的回调消息，前面我说到，Event Bus 在 Vertx 中起到了“神经系统的作用”实际上 ，换句话说，就是http 服务收到回调的时候，可以通过 Event Bus 发出消息。WebSocket 在收到 Event Bus 发来的消息的时候，推送给客户端。如下图看图：</p>
+<p>为了方便理解，我们就使用 MQ 里面通常的概念生产者和消费者。</p>
+<p>所以我们使用在  HttpService 中注册一个生产者，收到钉钉的回调以后，把消息转发出来。</p>
+<p>为了便于编写，我们可以单独写一个 HttpHandler</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//1</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">HttpHandler</span></span>(<span class="keyword">private</span> <span class="keyword">val</span> eventBus: EventBus) : Handler&lt;RoutingContext&gt; &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">val</span> log = LoggerFactory.getLogger(<span class="keyword">this</span>.javaClass);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">override</span> <span class="function"><span class="keyword">fun</span> <span class="title">handle</span><span class="params">(event: <span class="type">RoutingContext</span>)</span></span> &#123;</span><br><span class="line">        <span class="keyword">val</span> request = event.request()</span><br><span class="line">        request.bodyHandler &#123; t-&gt;</span><br><span class="line">                <span class="keyword">val</span> jsonObject = JsonObject(t)</span><br><span class="line">                <span class="keyword">val</span> toString = jsonObject.toString()</span><br><span class="line">                log.info(<span class="string">&quot;request is &#123;&#125;&quot;</span>,toString);</span><br><span class="line">                <span class="comment">// 2</span></span><br><span class="line">                eventBus.publish(<span class="string">&quot;callback&quot;</span>, toString)</span><br><span class="line">        &#125;</span><br><span class="line">        event.response().end(<span class="string">&quot;ok&quot;</span>)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里需要注意几个问题:</p>
+<ol>
+<li>我们需要使用 Event Bus 发送消息，所以需要在构造函数里面传入一个 Event Bus</li>
+<li>我们在收到消息以后，可以先将数据转换为 Json 字符串，然后发送消息，注意这里使用的是 <code>publish()</code> 是广播的意思，这样所有订阅的客户端都能收到新消息。</li>
+</ol>
+<p>有了生产者，并发出了数据，我们就可以，在 WebSocket 里面消费这个消息，然后推送给客户端了</p>
+<p>再来写一个 WebSocket 的 Handler</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//1</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">WebSocketHandler</span></span>(<span class="keyword">private</span> <span class="keyword">val</span> eventBus: EventBus) : Handler&lt;ServerWebSocket&gt; &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">val</span> log = LoggerFactory.getLogger(<span class="keyword">this</span>.javaClass)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">override</span> <span class="function"><span class="keyword">fun</span> <span class="title">handle</span><span class="params">(webSocket: <span class="type">ServerWebSocket</span>)</span></span> &#123;</span><br><span class="line">        <span class="keyword">val</span> binaryHandlerID = webSocket.binaryHandlerID()</span><br><span class="line"></span><br><span class="line">        <span class="comment">//2</span></span><br><span class="line">        <span class="keyword">val</span> consumer = eventBus.consumer&lt;String&gt;(<span class="string">&quot;callback&quot;</span>) &#123; message -&gt;</span><br><span class="line">            <span class="keyword">val</span> body = message.body()</span><br><span class="line">            log.info(<span class="string">&quot;send message &#123;&#125;&quot;</span>, body)</span><br><span class="line">            <span class="comment">//3</span></span><br><span class="line">            webSocket.writeTextMessage(body)</span><br><span class="line">        &#125;</span><br><span class="line">        webSocket.endHandler() &#123;</span><br><span class="line">            log.info(<span class="string">&quot;end&quot;</span>, binaryHandlerID)</span><br><span class="line">            <span class="comment">//4</span></span><br><span class="line">            consumer.unregister();</span><br><span class="line">        &#125;</span><br><span class="line">        webSocket.writeTextMessage(<span class="string">&quot;欢迎使用 xilidou 钉钉 代理&quot;</span>)</span><br><span class="line">        webSocket.writeTextMessage(<span class="string">&quot;连接成功&quot;</span>)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里需要注意几个问题:</p>
+<ol>
+<li>初始化的时候需要注入 eventBus</li>
+<li>写一个 <code>consumer()</code> 消费 HttpHandler 发来的消息</li>
+<li>将消息写入到 webSocket 中，发送给 Client</li>
+<li>WebSocket 断开后需要回收 consumer</li>
+</ol>
+<h3 id="初始化-Vertx"><a href="#初始化-Vertx" class="headerlink" title="初始化 Vertx"></a>初始化 Vertx</h3><p>做了那么多准备终于可以初始化我们的 Vertx 了</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">DingVerticleV2</span>: <span class="type">AbstractVerticle</span></span>()&#123;</span><br><span class="line">    <span class="keyword">override</span> <span class="function"><span class="keyword">fun</span> <span class="title">start</span><span class="params">()</span></span> &#123;</span><br><span class="line"></span><br><span class="line">        <span class="comment">//2</span></span><br><span class="line">        <span class="keyword">val</span> eventBus = vertx.eventBus()</span><br><span class="line">        <span class="keyword">val</span> httpServer = vertx.createHttpServer()</span><br><span class="line"></span><br><span class="line">        <span class="keyword">val</span> router = Router.router(vertx);</span><br><span class="line">        <span class="comment">//3</span></span><br><span class="line">        router.post(<span class="string">&quot;/api/ding&quot;</span>).handler(HttpHandler(eventBus));</span><br><span class="line">        httpServer.requestHandler(router);</span><br><span class="line"></span><br><span class="line">        <span class="comment">//4</span></span><br><span class="line">        httpServer.webSocketHandler(WebSocketHandler(eventBus));</span><br><span class="line">        httpServer.listen(<span class="number">8080</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//1</span></span><br><span class="line"><span class="function"><span class="keyword">fun</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    <span class="keyword">val</span> vertx = Vertx.vertx()</span><br><span class="line">    vertx.deployVerticle(DingVerticleV2())</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里需要注意几个问题:</p>
+<ol>
+<li>初始化 Vertx 并部署他</li>
+<li>初始化 eventBus</li>
+<li>注册 HttpHandler</li>
+<li>注册 WebSocketHandler</li>
+</ol>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li><p>Vertx 是一个工具，不是框架，所以可以很方便的与其他框架组合。</p>
+</li>
+<li><p>Vertx 是一个基于 Netty 的异步框架。我们可以向编写同步代码一样，编写异步代码。</p>
+</li>
+<li><p>vertx 在代码中主要有两个作用，一个是初始化组件，比如 ：</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">val</span> eventBus = vertx.eventBus()</span><br><span class="line"><span class="keyword">val</span> httpServer = vertx.createHttpServer()</span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+<p>还有一个是注册 <code>Handler</code>:</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">httpServer.webSocketHandler(WebSocketHandler(eventBus));</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>Event Bus 是一个消息系统。用于不同的 Handler 直接传递数据，简化开发。</li>
+</ul>
+<h2 id="相关连接"><a href="#相关连接" class="headerlink" title="相关连接"></a>相关连接</h2><ol>
+<li>使用教程 <a href="https://xilidou.com/2020/03/25/dingsanduo/">钉钉机器人回调内网穿透代理–使用篇</a></li>
+<li>Github 地址: <a target="_blank" rel="noopener" href="https://github.com/diaozxin007/DingTalkProxy">Github</a></li>
+<li>官网教程：<a target="_blank" rel="noopener" href="https://vertx.io/docs/guide-for-java-devs/">A gentle guide to asynchronous programming with Eclipse Vert.x for Java developers</a>;</li>
+<li><a target="_blank" rel="noopener" href="https://vertx.io/docs/vertx-core/kotlin/">Vert.x Core Manual</a></li>
+</ol>
+<p>欢迎关注我的微信公众号:</p>
+<p><img src="/images/2019-04-25-022202.jpg" alt="二维码"></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/java/" rel="tag"># java</a>
+              <a href="/tags/vertx/" rel="tag"># vertx</a>
+              <a href="/tags/dingding/" rel="tag"># dingding</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/03/25/dingsanduo/" rel="prev" title="钉钉机器人回调内网穿透代理--使用篇">
+                  <i class="fa fa-chevron-left"></i> 钉钉机器人回调内网穿透代理--使用篇
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/06/03/java-wechaty/" rel="next" title="终于有一个 Java 可以用的微信机器人了">
+                  终于有一个 Java 可以用的微信机器人了 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="noopener" target="_blank">京ICP备17065467号-1 </a>
+  </div>
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Zhengxin Diao</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.5.0/pjax.min.js" integrity="sha256-3NkoLDrmHLTYj7csHIZSr0MHAFTXth7Ua/DDt4MRUAg=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script><script src="/js/pjax.js"></script>
+
+  
+
+
+
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+</body>
+</html>

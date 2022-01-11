@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"xilidou.com","root":"/","images":"/images","scheme":"Pisces","darkmode":false,"version":"8.9.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js"></script>
+<meta name="description" content="原文地址：https:&#x2F;&#x2F;www.xilidou.com&#x2F;2018&#x2F;03&#x2F;20&#x2F;redis-server&#x2F; 之前的文章讲解了 Redis 的数据结构，这回就可以看看作为内存数据库，Redis 是怎么存储数据的。以及键是怎么过期的。 阅读这篇文章你将会了解到：  Redis 的数据库实现 Redis 键过期的策略">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis 数据库、键过期的实现">
+<meta property="og:url" content="https://xilidou.com/2018/03/20/redis-server/index.html">
+<meta property="og:site_name" content="犀利豆的博客">
+<meta property="og:description" content="原文地址：https:&#x2F;&#x2F;www.xilidou.com&#x2F;2018&#x2F;03&#x2F;20&#x2F;redis-server&#x2F; 之前的文章讲解了 Redis 的数据结构，这回就可以看看作为内存数据库，Redis 是怎么存储数据的。以及键是怎么过期的。 阅读这篇文章你将会了解到：  Redis 的数据库实现 Redis 键过期的策略">
+<meta property="og:locale">
+<meta property="og:image" content="https://xilidou.com/images/redisServer.jpg">
+<meta property="og:image" content="https://xilidou.com/images/dbNoExpire.jpg">
+<meta property="og:image" content="https://xilidou.com/images/db.jpg">
+<meta property="og:image" content="https://xilidou.com/images/2019-04-25-022206.jpg">
+<meta property="article:published_time" content="2018-03-20T17:26:08.000Z">
+<meta property="article:modified_time" content="2022-01-11T05:08:45.728Z">
+<meta property="article:author" content="Zhengxin Diao">
+<meta property="article:tag" content="redis">
+<meta property="article:tag" content="db">
+<meta property="article:tag" content="redisdb">
+<meta property="article:tag" content="redis key">
+<meta property="article:tag" content="redis expire">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://xilidou.com/images/redisServer.jpg">
+
+
+<link rel="canonical" href="https://xilidou.com/2018/03/20/redis-server/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh","comments":true,"permalink":"https://xilidou.com/2018/03/20/redis-server/","path":"2018/03/20/redis-server/","title":"Redis 数据库、键过期的实现"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Redis 数据库、键过期的实现 | 犀利豆的博客</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?5d32532da741f4430197fd778ea752f1"></script>
+
+  <script async src="//assets.growingio.com/2.1/gio.js"></script>
+  <script class="next-config" data-name="growingio_analytics" type="application/json">"UA-35317601-2"</script>
+  <script src="/js/third-party/analytics/growingio.js"></script>
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="犀利豆的博客" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">犀利豆的博客</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">高质量的技术博客</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li>
+        <li class="menu-item menu-item-java"><a href="/tags/java/" rel="section"><i class="fa fa-th fa-fw"></i>java</a></li>
+        <li class="menu-item menu-item-redis"><a href="/tags/redis/" rel="section"><i class="fa fa-th fa-fw"></i>redis</a></li>
+        <li class="menu-item menu-item-dubbo"><a href="/tags/dubbo/" rel="section"><i class="fa fa-th fa-fw"></i>dubbo</a></li>
+        <li class="menu-item menu-item-tools"><a href="/tags/tools" rel="section"><i class="fa fa-th fa-fw"></i>tools</a></li>
+        <li class="menu-item menu-item-我的朋友们"><a href="/friends" rel="section"><i class="fa fa-user fa-fw"></i>我的朋友们</a></li>
+        <li class="menu-item menu-item-关于我"><a href="/aboutme" rel="section"><i class="fa fa-user fa-fw"></i>关于我</a></li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E5%BA%93%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="nav-number">1.</span> <span class="nav-text">数据库的实现</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E5%BA%93%E8%AF%BB%E5%86%99%E6%93%8D%E4%BD%9C"><span class="nav-number">1.1.</span> <span class="nav-text">数据库读写操作</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%94%AE%E7%9A%84%E8%BF%87%E6%9C%9F%E5%AE%9E%E7%8E%B0"><span class="nav-number">1.2.</span> <span class="nav-text">键的过期实现</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%90%8E%E8%AE%B0"><span class="nav-number">2.</span> <span class="nav-text">后记</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Zhengxin Diao</p>
+  <div class="site-description" itemprop="description">北邮本科，University of Leicester EE 研究生，Java后端开发，目前就职阿里</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">43</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">73</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/diaozxin007" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;diaozxin007" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:diaozxin@163.com" title="E-Mail → mailto:diaozxin@163.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/diao-zheng-xin/activities" title="zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;diao-zheng-xin&#x2F;activities" rel="noopener" target="_blank"><i class="zhihu fa-fw"></i>zhihu</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml"><i class="rs fa-fw"></i>RSS</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://xilidou.com/2018/03/20/redis-server/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Zhengxin Diao">
+      <meta itemprop="description" content="北邮本科，University of Leicester EE 研究生，Java后端开发，目前就职阿里">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="犀利豆的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Redis 数据库、键过期的实现
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2018-03-20 17:26:08" itemprop="dateCreated datePublished" datetime="2018-03-20T17:26:08+00:00">2018-03-20</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2022-01-11 05:08:45" itemprop="dateModified" datetime="2022-01-11T05:08:45+00:00">2022-01-11</time>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>原文地址：<a target="_blank" rel="noopener" href="https://www.xilidou.com/2018/03/20/redis-server/">https://www.xilidou.com/2018/03/20/redis-server/</a></p>
+<p>之前的文章讲解了 Redis 的数据结构，这回就可以看看作为内存数据库，Redis 是怎么存储数据的。以及键是怎么过期的。</p>
+<p>阅读这篇文章你将会了解到：</p>
+<ul>
+<li>Redis 的数据库实现</li>
+<li>Redis 键过期的策略</li>
+</ul>
+<span id="more"></span>
+
+<h1 id="数据库的实现"><a href="#数据库的实现" class="headerlink" title="数据库的实现"></a>数据库的实现</h1><p>我们先看代码 <code>server.h/redisServer</code> </p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">redisServer</span>&#123;</span></span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    <span class="comment">//保存 db 的数组</span></span><br><span class="line">    redisDb *db;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">//db 的数量</span></span><br><span class="line">    <span class="keyword">int</span> dbnum;</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>再看redisDb的代码：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">redisDb</span> &#123;</span></span><br><span class="line">    dict *dict;                 <span class="comment">/* The keyspace for this DB */</span></span><br><span class="line">    dict *expires;              <span class="comment">/* Timeout of keys with a timeout set */</span></span><br><span class="line">    dict *blocking_keys;        <span class="comment">/* Keys with clients waiting for data (BLPOP)*/</span></span><br><span class="line">    dict *ready_keys;           <span class="comment">/* Blocked keys that received a PUSH */</span></span><br><span class="line">    dict *watched_keys;         <span class="comment">/* WATCHED keys for MULTI/EXEC CAS */</span></span><br><span class="line">    <span class="keyword">int</span> id;                     <span class="comment">/* Database ID */</span></span><br><span class="line">    <span class="keyword">long</span> <span class="keyword">long</span> avg_ttl;          <span class="comment">/* Average TTL, just for stats */</span></span><br><span class="line">&#125; redisDb;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>总体来说redis的 server 包含若干个（默认16个） redisDb 数据库。</p>
+<p><img src="/images/redisServer.jpg" alt="db"></p>
+<p>Redis 是一个 k-v 存储的键值对数据库。其中字典 dict 保存了数据库中的所有键值对，这个地方叫做 <code>keyspace</code> 直译过来就是“键空间”。</p>
+<p>所以我们就可以这么认为，在 redisDb 中我们使用 dict（字典）来维护键空间。</p>
+<ul>
+<li><p>keyspace 的 kay 是数据库的 key，每一个key 是一个字符串对象。注意不是字符串，而是字符串对象。</p>
+</li>
+<li><p>keyspace 的 value 是数据库的 value，这个 value 可以是 redis 的，字符串对象，列表对象，哈希表对象，集合对象或者有序对象中的一种。</p>
+</li>
+</ul>
+<h2 id="数据库读写操作"><a href="#数据库读写操作" class="headerlink" title="数据库读写操作"></a>数据库读写操作</h2><p>所以对于数据的增删改查，就是对 keyspace 这个大 map 的增删改查。</p>
+<p>当我们执行：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&gt;redis SET mobile <span class="string">&quot;13800000000&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>实际上就是为 keyspace 增加了一个 key 是包含字符串“mobile”的字符串对象，value 为包含字符“13800000000”的字符串对象。</p>
+<p>看图：</p>
+<p><img src="/images/dbNoExpire.jpg" alt="db"></p>
+<p>对于删改查，没啥好说的。类似java 的 map 操作，大多数程序员应该都能理解。</p>
+<p>需要特别注意的是，再执行对键的读写操作的时候，Redis 还要做一些额外的维护动作：</p>
+<ul>
+<li>维护 hit 和 miss 两个计数器。用于统计 Redis 的缓存命中率。</li>
+<li>更新键的 LRU 时间，记录键的最后活跃时间。</li>
+<li>如果在读取的时候发现键已经过期，Redis 先删除这个过期的键然后再执行余下操作。</li>
+<li>如果有客户对这个键执行了 WATCH 操作，会把这个键标记为 dirty，让事务注意到这个键已经被改过。</li>
+<li>没修改一次 dirty 会增加1。</li>
+<li>如果服务器开启了数据库通知功能，键被修改之后，会按照配置发送通知。</li>
+</ul>
+<h2 id="键的过期实现"><a href="#键的过期实现" class="headerlink" title="键的过期实现"></a>键的过期实现</h2><p>Redis 作为缓存使用最主要的一个特性就是可以为键值对设置过期时间。就看看 Redis 是如果实现这一个最重要的特性的？</p>
+<p>在 Redis 中与过期时间有关的命令 </p>
+<ul>
+<li>EXPIRE 设置 key 的存活时间单位秒</li>
+<li>EXPIREAT 设置 key 的过期时间点单位秒</li>
+<li>PEXPIRE 设置 key 的存活时间单位毫秒</li>
+<li>PEXPIREAT 设置 key 的过期时间点单位毫秒</li>
+</ul>
+<p>其实这些命令，底层的命令都是由 REXPIREAT 实现的。</p>
+<p>在 redisDb 中使用了 dict *expires，来存储过期时间的。其中 key 指向了 keyspace 中的 key（c 语言中的指针）， value 是一个 long long 类型的时间戳，标定这个 key 过期的时间点，单位是毫秒。</p>
+<p>如果我们为上文的 mobile 增加一个过期时间。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&gt;redis PEXPIREAT mobile 1521469812000</span><br></pre></td></tr></table></figure>
+
+<p>这个时候就会在过期的 字典中增加一个键值对。如下图：</p>
+<p><img src="/images/db.jpg" alt="db"></p>
+<p>对于过期的判断逻辑就很简单：</p>
+<ol>
+<li>在 字典 expires 中 key 是否存在。</li>
+<li>如果 key 存在，value 的时间戳是否小于当前系统时间戳。</li>
+</ol>
+<p>接下来就需要讨论一下过期的键的删除策略。</p>
+<p>key的删除有三种策略：</p>
+<ol>
+<li>定时删除，Redis定时的删除内存里面所有过期的键值对，这样能够保证内存友好，过期的key都会被删除，但是如果key的数量很多，一次删除需要CPU运算，CPU不友好。</li>
+<li>惰性删除，只有 key 在被调用的时候才去检查键值对是否过期，但是会造成内存中存储大量的过期键值对，内存不友好，但是极大的减轻CPU 的负担。</li>
+<li>定时部分删除，Redis定时扫描过期键，但是只删除部分，至于删除多少键，根据当前 Redis 的状态决定。</li>
+</ol>
+<p>这三种策略就是对时间和空间有不同的倾向。Redis为了平衡时间和空间，采用了后两种策略 惰性删除和定时部分删除。</p>
+<p>惰性删除比较简单，不做过多介绍。主要讨论一下定时部分删除。</p>
+<p>过期键的定时删除的策略由 expire.c/activeExpireCycle() 函数实现，server.c/serverCron() 定时的调用 <code>activieExpireCycle()</code> 。</p>
+<p>activeExpireCycle 的大的操作原则是，如果过期的key比较少，则删除key的数量也比较保守，如果，过期的键多，删除key的策略就会很激进。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">unsigned</span> <span class="keyword">int</span> current_db = <span class="number">0</span>; <span class="comment">/* Last DB tested. */</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">int</span> timelimit_exit = <span class="number">0</span>;      <span class="comment">/* Time limit hit in previous call? */</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">long</span> <span class="keyword">long</span> last_fast_cycle = <span class="number">0</span>; <span class="comment">/* When last fast cycle ran. */</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>首先三个 <code>static</code> 全局参数分别记录目前遍历的 db下标，上一次删除是否是超时退出的，上一次快速操作是什么时候进行的。</p>
+</li>
+<li><p>计算 <code>timelimit = 1000000*ACTIVE_EXPIRE_CYCLE_SLOW_TIME_PERC/server.hz/100;</code> 可以理解为 25% 的 cpu 时间。 </p>
+</li>
+<li><p>如果 db 中 expire 的大小为0 不操作</p>
+</li>
+<li><p>expire 占总 key 小于 1% 不操作</p>
+</li>
+<li><p>num = dictSize(db-&gt;expires)；num 是 expire 使用的key的数量。</p>
+</li>
+<li><p>slots = dictSlots(db-&gt;expires); slots 是 expire 字典的尺寸大小。</p>
+</li>
+<li><p>已使用的key（num） 大于 ACTIVE_EXPIRE_CYCLE_LOOKUPS_PER_LOOP 则设置为 ACTIVE_EXPIRE_CYCLE_LOOKUPS_PER_LOOP。也就是说每次只检查 ACTIVE_EXPIRE_CYCLE_LOOKUPS_PER_LOOP 个键。</p>
+</li>
+<li><p>随机获取带过期的 key。计算是否过期，如果过期就删除。</p>
+</li>
+<li><p>然后各种统计，包括删除键的次数，平均过期时间。</p>
+</li>
+<li><p>每遍历十六次，计算操作时间，如果超过 timelimit 结束返回。</p>
+</li>
+<li><p>如果删除的过期键大于 ACTIVE_EXPIRE_CYCLE_LOOKUPS_PER_LOOP 的 1\4 就跳出循环，结束。</p>
+</li>
+</ul>
+<p>步骤比较复杂，总结一下：（这里都是以默认配置描述）</p>
+<ol>
+<li>redis 会用最多 25% 的 cpu 时间处理键的过期。</li>
+<li>遍历所有的 redisDb</li>
+<li>在每个 redisDb 中如果数据中没有过期键或者过期键比例过低就直接进入下一个 redisDb。</li>
+<li>否则，遍历 redisDb 中的过期键，如果删除的键达到有过期时间的的key 的25% ，或者操作时间大于 cpu 时间的 25% 就结束当前循环，进入下一个redisDb。</li>
+</ol>
+<h1 id="后记"><a href="#后记" class="headerlink" title="后记"></a>后记</h1><p>这篇文章主要解释了 Redis 的数据库是怎么实现的，同时介绍了 Redis 处理过期键的逻辑。看 Redis 的代码越多越发现，实际上 Redis 一直在做的一件事情就是平衡，一直在平衡程序的空间和时间。其实平时的业务设计，就是在宏观上平衡，平衡宏观系统的时间和空间。所以，看源码是让我们从微观学习系统架构的良好途径，是架构师的成长的必经之路。</p>
+<p>我之前的三篇关于 Redis 的基础数据结构链接地址，欢迎大家阅读。</p>
+<p><a target="_blank" rel="noopener" href="https://www.xilidou.com/2018/03/12/redis-data/?fromblog=redis-server">Redis 的基础数据结构（一） 可变字符串、链表、字典</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.xilidou.com/2018/03/13/redis-data2/?blogfrom=redis-server">Redis 的基础数据结构（二） 整数集合、跳跃表、压缩列表</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.xilidou.com/2018/03/15/redis-object/">Redis 的基础数据结构（三）对象 </a></p>
+<p>欢迎关注我的微信公众号：<br><img src="/images/2019-04-25-022206.jpg" alt="二维码"></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/redis/" rel="tag"># redis</a>
+              <a href="/tags/db/" rel="tag"># db</a>
+              <a href="/tags/redisdb/" rel="tag"># redisdb</a>
+              <a href="/tags/redis-key/" rel="tag"># redis key</a>
+              <a href="/tags/redis-expire/" rel="tag"># redis expire</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2018/03/15/redis-object/" rel="prev" title="Redis 的基础数据结构（三）对象">
+                  <i class="fa fa-chevron-left"></i> Redis 的基础数据结构（三）对象
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2018/03/22/redis-event/" rel="next" title="Redis 中的事件驱动模型">
+                  Redis 中的事件驱动模型 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="noopener" target="_blank">京ICP备17065467号-1 </a>
+  </div>
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Zhengxin Diao</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.5.0/pjax.min.js" integrity="sha256-3NkoLDrmHLTYj7csHIZSr0MHAFTXth7Ua/DDt4MRUAg=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script><script src="/js/pjax.js"></script>
+
+  
+
+
+
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+</body>
+</html>

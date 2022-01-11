@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"xilidou.com","root":"/","images":"/images","scheme":"Pisces","darkmode":false,"version":"8.9.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js"></script>
+<meta name="description" content="最近换工作以后，结结实实的写了几个月的业务。需求完结以后，就找找自己喜欢的东西写写，换个口味。 撸码最难的就是给变量取名字了。所以就写一个变量生成器吧。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="撸码的福音--变量名生成器的实现">
+<meta property="og:url" content="https://xilidou.com/2018/07/09/hump-api/index.html">
+<meta property="og:site_name" content="犀利豆的博客">
+<meta property="og:description" content="最近换工作以后，结结实实的写了几个月的业务。需求完结以后，就找找自己喜欢的东西写写，换个口味。 撸码最难的就是给变量取名字了。所以就写一个变量生成器吧。">
+<meta property="og:locale">
+<meta property="og:image" content="https://xilidou.com/images/2019-04-25-022217.jpg">
+<meta property="og:image" content="https://xilidou.com/images/2019-04-25-022218.jpg">
+<meta property="article:published_time" content="2018-07-09T11:26:04.000Z">
+<meta property="article:modified_time" content="2022-01-11T05:08:45.728Z">
+<meta property="article:author" content="Zhengxin Diao">
+<meta property="article:tag" content="java">
+<meta property="article:tag" content="alfred">
+<meta property="article:tag" content="效率">
+<meta property="article:tag" content="tools">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://xilidou.com/images/2019-04-25-022217.jpg">
+
+
+<link rel="canonical" href="https://xilidou.com/2018/07/09/hump-api/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh","comments":true,"permalink":"https://xilidou.com/2018/07/09/hump-api/","path":"2018/07/09/hump-api/","title":"撸码的福音--变量名生成器的实现"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>撸码的福音--变量名生成器的实现 | 犀利豆的博客</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?5d32532da741f4430197fd778ea752f1"></script>
+
+  <script async src="//assets.growingio.com/2.1/gio.js"></script>
+  <script class="next-config" data-name="growingio_analytics" type="application/json">"UA-35317601-2"</script>
+  <script src="/js/third-party/analytics/growingio.js"></script>
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="犀利豆的博客" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">犀利豆的博客</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">高质量的技术博客</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li>
+        <li class="menu-item menu-item-java"><a href="/tags/java/" rel="section"><i class="fa fa-th fa-fw"></i>java</a></li>
+        <li class="menu-item menu-item-redis"><a href="/tags/redis/" rel="section"><i class="fa fa-th fa-fw"></i>redis</a></li>
+        <li class="menu-item menu-item-dubbo"><a href="/tags/dubbo/" rel="section"><i class="fa fa-th fa-fw"></i>dubbo</a></li>
+        <li class="menu-item menu-item-tools"><a href="/tags/tools" rel="section"><i class="fa fa-th fa-fw"></i>tools</a></li>
+        <li class="menu-item menu-item-我的朋友们"><a href="/friends" rel="section"><i class="fa fa-user fa-fw"></i>我的朋友们</a></li>
+        <li class="menu-item menu-item-关于我"><a href="/aboutme" rel="section"><i class="fa fa-user fa-fw"></i>关于我</a></li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BC%94%E7%A4%BA%E5%A6%82%E4%B8%8B"><span class="nav-number">1.</span> <span class="nav-text">演示如下</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF"><span class="nav-number">2.</span> <span class="nav-text">实现思路</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#API-%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="nav-number">3.</span> <span class="nav-text">API 的实现</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#vertx-web"><span class="nav-number">3.1.</span> <span class="nav-text">vertx-web</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RestTemplate"><span class="nav-number">4.</span> <span class="nav-text">RestTemplate</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Guava"><span class="nav-number">5.</span> <span class="nav-text">Guava</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#python-%E8%84%9A%E6%9C%AC"><span class="nav-number">6.</span> <span class="nav-text">python 脚本</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Alfred"><span class="nav-number">7.</span> <span class="nav-text">Alfred</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%80%E5%90%8E"><span class="nav-number">8.</span> <span class="nav-text">最后</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Zhengxin Diao</p>
+  <div class="site-description" itemprop="description">北邮本科，University of Leicester EE 研究生，Java后端开发，目前就职阿里</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">43</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">73</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/diaozxin007" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;diaozxin007" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:diaozxin@163.com" title="E-Mail → mailto:diaozxin@163.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/diao-zheng-xin/activities" title="zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;diao-zheng-xin&#x2F;activities" rel="noopener" target="_blank"><i class="zhihu fa-fw"></i>zhihu</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml"><i class="rs fa-fw"></i>RSS</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://xilidou.com/2018/07/09/hump-api/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Zhengxin Diao">
+      <meta itemprop="description" content="北邮本科，University of Leicester EE 研究生，Java后端开发，目前就职阿里">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="犀利豆的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          撸码的福音--变量名生成器的实现
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2018-07-09 11:26:04" itemprop="dateCreated datePublished" datetime="2018-07-09T11:26:04+00:00">2018-07-09</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2022-01-11 05:08:45" itemprop="dateModified" datetime="2022-01-11T05:08:45+00:00">2022-01-11</time>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>最近换工作以后，结结实实的写了几个月的业务。需求完结以后，就找找自己喜欢的东西写写，换个口味。</p>
+<p>撸码最难的就是给变量取名字了。所以就写一个变量生成器吧。</p>
+<span id="more"></span>
+
+<h2 id="演示如下"><a href="#演示如下" class="headerlink" title="演示如下"></a>演示如下</h2><p><embed src="https://imgcache.qq.com/tencentvideo_v1/playerv3/TPout.swf?max_age=86400&v=20161117&vid=p1343hsm107&auto=0" allowFullScreen="true" quality="high" width="480" height="400" align="middle" allowScriptAccess="always" type="application/x-shockwave-flash"></embed></p>
+<h2 id="实现思路"><a href="#实现思路" class="headerlink" title="实现思路"></a>实现思路</h2><p>使用了 Mac 上最出名的效率工具 <code>Alfred</code>。利用 <code>Alfred</code> 调用本地的 <code>python</code> 脚本，利用 http 模块，请求远程的 API 接口。</p>
+<p>远程 API 获取查询的字符后，首先使用<code>结巴分词</code>，对查询的句子进行分词，然后调用有道词典的 API 翻译，拼接以后返回。</p>
+<p>最终，一个回车就能把结果输入到我们的 IDE 里面减少很多操作，妈妈再也不会担心我取不出变量名啦。</p>
+<h2 id="API-的实现"><a href="#API-的实现" class="headerlink" title="API 的实现"></a>API 的实现</h2><p>既然说换个口味，那 API 我肯定不会使用 ‘Spring mvc’ 啦。</p>
+<p>主要采用的是 ‘vertx’ 这个基于’netty’ 的全异步的 java 库。有兴趣的同学可以参考 <a target="_blank" rel="noopener" href="http://vartx.io/">http://vartx.io</a> 。</p>
+<p>使用 Spring boot 管理对象的生命周期。</p>
+<p>使用 “结巴分词” 对查询的语句进行分词。</p>
+<p>使用 guava cache 来对查询结果进行缓存。为啥要缓存？主要是有道的翻译API是收费的，查完把结果缓存起来能节约一点算一点。</p>
+<p>至于为什么使用本地缓存而不是 Redis？因为阿里云的 Redis 一个月要25块钱啊。自己搭一个？我的vps 一共只有 1G 内存啊。</p>
+<p>说到底，架构设计需要考虑实际情况，一味上高大上的技术也不可取。适合的才是最好的。</p>
+<h3 id="vertx-web"><a href="#vertx-web" class="headerlink" title="vertx-web"></a>vertx-web</h3><p>写过 <code>netty</code> 的同学就知道，<code>netty</code> 的业务逻辑是写在一个个的 <code>handler</code>中的。</p>
+<p>同样 <code>vertx</code> 也类似于 <code>netty</code> 也是使用 <code>handler</code> 来处理请求。</p>
+<p>vertx 通过 Router 这个类，将请求路由到不同的 Handler 中。所以我们直接看代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">StaticServer</span> <span class="keyword">extends</span> <span class="title">AbstractVerticle</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> VariableHandler variableHandler;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">start</span><span class="params">()</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        Router router = Router.router(vertx);</span><br><span class="line">        router.route().handler(BodyHandler.create());</span><br><span class="line">        router.post(<span class="string">&quot;/api/hump&quot;</span>).handler(routingContext -&gt;variableHandler.get(routingContext));</span><br><span class="line">        vertx.createHttpServer().requestHandler(router::accept).listen(<span class="number">8080</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们把 <code>VariableHandler</code> 绑定到了 ’/api/hump‘ 这个 uri 的 post 方法上了。服务器启动以后会监听 ’8080‘ 端口。 vertx-web的运行是不需要类似 tomcat 这样的容器的。</p>
+<h2 id="RestTemplate"><a href="#RestTemplate" class="headerlink" title="RestTemplate"></a>RestTemplate</h2><p>我们一般是用 <code>Httpclient</code> 在代码中调用 http 接口。但是我觉得 HTTPClient 封装的不是很好。我们可以直接使用 <code>Spring boot web</code> 提供的 RestTemplate （真香）。直接看代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> ApiResponse <span class="title">requestYoudao</span><span class="params">(String param)</span></span>&#123;</span><br><span class="line">    <span class="keyword">long</span> timeMillis = System.currentTimeMillis();</span><br><span class="line">    String salt = String.valueOf(timeMillis);</span><br><span class="line">    String sign = Md5Utils.md5(appKey + param + salt + secretKey);</span><br><span class="line">    MultiValueMap&lt;String,String&gt; bodyMap = <span class="keyword">new</span> LinkedMultiValueMap&lt;&gt;();</span><br><span class="line">    bodyMap.add(<span class="string">&quot;q&quot;</span>,param);</span><br><span class="line">    bodyMap.add(<span class="string">&quot;from&quot;</span>,<span class="string">&quot;auto&quot;</span>);</span><br><span class="line">    bodyMap.add(<span class="string">&quot;to&quot;</span>,<span class="string">&quot;auto&quot;</span>);</span><br><span class="line">    bodyMap.add(<span class="string">&quot;appKey&quot;</span>,appKey);</span><br><span class="line">    bodyMap.add(<span class="string">&quot;salt&quot;</span>,salt);</span><br><span class="line">    bodyMap.add(<span class="string">&quot;sign&quot;</span>,sign);</span><br><span class="line">    MultiValueMap&lt;String,String&gt; headersMap = <span class="keyword">new</span> LinkedMultiValueMap&lt;&gt;();</span><br><span class="line">    HttpEntity&lt;MultiValueMap&lt;String, String&gt;&gt; requestEntity  = <span class="keyword">new</span> HttpEntity&lt;&gt;(bodyMap, headersMap);</span><br><span class="line">    <span class="keyword">return</span> restTemplate.postForObject(url, requestEntity,ApiResponse.class);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Guava"><a href="#Guava" class="headerlink" title="Guava"></a>Guava</h2><p>Guava 是 google 提供的一个java 基础库类，如果会使用 Guava 的话，会成倍的提升你的开发效率。在本项目中主要使用 Guava 提供的本地缓存和字符串操作：</p>
+<p>Guava cache 的使用很简单直接看代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Autowired</span></span><br><span class="line"><span class="keyword">private</span> Cache&lt;String,ApiResponse&gt; cache;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> ApiResponse <span class="title">cachedResponse</span><span class="params">(String param)</span></span>&#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> cache.get(param, () -&gt; requestYoudao(param));</span><br><span class="line">    &#125;<span class="keyword">catch</span> (Exception e)&#123;</span><br><span class="line">log.error(<span class="string">&quot;error&quot;</span>,e);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Guava 对提供了很多给力的字符串的操作。尤其是对字符串下划线，大小写，驼峰形式，提供的强有力的支持。这样使得我们的 API 提供各种风格的变量形式。我们直接看代：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">switch</span> (status)&#123;</span><br><span class="line">    <span class="keyword">case</span> Constants.LOWER_CAMEL:</span><br><span class="line">        <span class="keyword">return</span> CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL,underline);</span><br><span class="line">    <span class="keyword">case</span> Constants.LOWER_HYPHEN:</span><br><span class="line">        <span class="keyword">return</span> CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.LOWER_HYPHEN,underline);</span><br><span class="line">    <span class="keyword">case</span> Constants.LOWER_UNDERSCORE:</span><br><span class="line">        <span class="keyword">return</span> CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.LOWER_UNDERSCORE,underline);</span><br><span class="line">    <span class="keyword">case</span> Constants.UPPER_CAMEL:</span><br><span class="line">        <span class="keyword">return</span> CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.UPPER_CAMEL,underline);</span><br><span class="line">    <span class="keyword">case</span> Constants.UPPER_UNDERSCORE:</span><br><span class="line">        <span class="keyword">return</span> CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.UPPER_UNDERSCORE,underline);</span><br><span class="line">    <span class="keyword">default</span>:</span><br><span class="line">        <span class="keyword">return</span>  CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL,underline);</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>以上就是 API 接口的实现。</p>
+<h2 id="python-脚本"><a href="#python-脚本" class="headerlink" title="python 脚本"></a>python 脚本</h2><p>本地的python 脚本就极其简单了：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment"># -*- coding:utf-8 -*-</span></span><br><span class="line"><span class="keyword">import</span> httplib,urllib,json</span><br><span class="line"></span><br><span class="line">url = <span class="string">&#x27;xilidou.com&#x27;</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">query</span>(<span class="params">q,status=<span class="number">0</span></span>):</span></span><br><span class="line">    response = get(q,status)</span><br><span class="line">    dates = json.loads(response.read())</span><br><span class="line">    items = <span class="built_in">list</span>()</span><br><span class="line">    <span class="keyword">for</span> date <span class="keyword">in</span> dates:</span><br><span class="line">        item = &#123;&#125;</span><br><span class="line">        item[<span class="string">&#x27;title&#x27;</span>] = date.encode(<span class="string">&#x27;utf-8&#x27;</span>)</span><br><span class="line">        item[<span class="string">&#x27;arg&#x27;</span>] = date.encode(<span class="string">&#x27;utf-8&#x27;</span>)</span><br><span class="line">        item[<span class="string">&#x27;subtitle&#x27;</span>] = <span class="string">&#x27;回车复制&#x27;</span></span><br><span class="line">        item[<span class="string">&#x27;icon&#x27;</span>] = getIcon()</span><br><span class="line">        items.append(item)</span><br><span class="line">    jsonBean = &#123;&#125;</span><br><span class="line">    jsonBean[<span class="string">&#x27;items&#x27;</span>] = items</span><br><span class="line">    json_str = json.dumps(jsonBean)</span><br><span class="line">    <span class="keyword">if</span> json_str:</span><br><span class="line">        <span class="built_in">print</span> json_str</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">str</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">get</span>(<span class="params">q,status=<span class="number">0</span></span>):</span></span><br><span class="line">    parameters= <span class="built_in">dict</span>()</span><br><span class="line">    parameters[<span class="string">&#x27;q&#x27;</span>] = q</span><br><span class="line">    parameters[<span class="string">&#x27;status&#x27;</span>] = status</span><br><span class="line"></span><br><span class="line">    parameters = urllib.urlencode(parameters)</span><br><span class="line">    headers = &#123;<span class="string">&quot;Content-type&quot;</span>: <span class="string">&quot;application/x-www-form-urlencoded&quot;</span>&#125;</span><br><span class="line"></span><br><span class="line">    conn = httplib.HTTPSConnection(url)</span><br><span class="line">    conn.request(<span class="string">&#x27;POST&#x27;</span>,<span class="string">&#x27;/api/hump&#x27;</span>,parameters,headers)</span><br><span class="line">    response = conn.getresponse()</span><br><span class="line">    <span class="keyword">return</span> response</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">getIcon</span>():</span></span><br><span class="line">    icon = &#123;&#125;</span><br><span class="line">    icon[<span class="string">&#x27;path&#x27;</span>] = <span class="string">&#x27;icon.png&#x27;</span></span><br><span class="line">    <span class="keyword">return</span> icon</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    query(<span class="string">&#x27;中文&#x27;</span>)</span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>干两件事情：</p>
+<ul>
+<li>从 Alfred 中获取用户输入的待查询字符串。</li>
+<li>调用远程的 API 接口获取返回后格式化然后打印结果。</li>
+</ul>
+<h2 id="Alfred"><a href="#Alfred" class="headerlink" title="Alfred"></a>Alfred</h2><p>大家可以直接下载 github 代码。在 python 文件夹里面找到 <code>hump.alfredworkflow</code> 双击。就安装到你的 Mac 上了。</p>
+<p>前提是你的 Mac 安装了 aflred 且付费成为高级用户。</p>
+<h2 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h2><p>老规矩 github 地址：<a target="_blank" rel="noopener" href="https://github.com/diaozxin007/HumpApi">https://github.com/diaozxin007/HumpApi</a></p>
+<p>workflow 下载地址：<a href="/images/hump.alfredworkflow">下载</a></p>
+<p>我之前还开发了一个利用 alfred 直接查询有道词典的 workflow。效果如下图：</p>
+<p><img src="/images/2019-04-25-022217.jpg" alt="youdao"></p>
+<p>下载地址如下：<a target="_blank" rel="noopener" href="https://www.xilidou.com/2017/10/24/%E6%9C%89%E9%81%93-Alfred-Workflow-%E5%A8%81%E5%8A%9B%E5%8A%A0%E5%BC%BA%E7%89%88/">https://www.xilidou.com/2017/10/24/%E6%9C%89%E9%81%93-Alfred-Workflow-%E5%A8%81%E5%8A%9B%E5%8A%A0%E5%BC%BA%E7%89%88/</a></p>
+<p>欢迎关注我的微信公众号：<br><img src="/images/2019-04-25-022218.jpg" alt="二维码"></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/java/" rel="tag"># java</a>
+              <a href="/tags/alfred/" rel="tag"># alfred</a>
+              <a href="/tags/%E6%95%88%E7%8E%87/" rel="tag"># 效率</a>
+              <a href="/tags/tools/" rel="tag"># tools</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2018/06/04/raft/" rel="prev" title="Raft 协议学习笔记">
+                  <i class="fa fa-chevron-left"></i> Raft 协议学习笔记
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2018/08/15/java-doc-pdf/" rel="next" title="Java 渲染 docx 文件，并生成 pdf 加水印">
+                  Java 渲染 docx 文件，并生成 pdf 加水印 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="noopener" target="_blank">京ICP备17065467号-1 </a>
+  </div>
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Zhengxin Diao</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.5.0/pjax.min.js" integrity="sha256-3NkoLDrmHLTYj7csHIZSr0MHAFTXth7Ua/DDt4MRUAg=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script><script src="/js/pjax.js"></script>
+
+  
+
+
+
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"xilidou.com","root":"/","images":"/images","scheme":"Pisces","darkmode":false,"version":"8.9.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js"></script>
+<meta name="description" content="我们的业务系统使用了一段时间后，用户的角色类型越来越多，这时候不同类型的用户可以使用不同功能，看见不同数据的需求就变得越来越迫切。如何设计一个可扩展,且易于接入的权限系统.就显得相当重要了。结合之前我实现的的权限系统，今天就来和大家探讨一下我对权限系统的理解。 这篇文章会从权限系统业务设计，技术架构，关键代码几个方面，详细的阐述权限系统的实现。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="如何利用 Spring Hibernate 高级特性设计实现一个权限系统">
+<meta property="og:url" content="https://xilidou.com/2019/05/11/permisson/index.html">
+<meta property="og:site_name" content="犀利豆的博客">
+<meta property="og:description" content="我们的业务系统使用了一段时间后，用户的角色类型越来越多，这时候不同类型的用户可以使用不同功能，看见不同数据的需求就变得越来越迫切。如何设计一个可扩展,且易于接入的权限系统.就显得相当重要了。结合之前我实现的的权限系统，今天就来和大家探讨一下我对权限系统的理解。 这篇文章会从权限系统业务设计，技术架构，关键代码几个方面，详细的阐述权限系统的实现。">
+<meta property="og:locale">
+<meta property="og:image" content="https://xilidou.com/images/alex-pudov-588871-unsplash%202.jpg?x-oss-process=image/resize,p_40">
+<meta property="og:image" content="https://xilidou.com/images/permissin-er.png">
+<meta property="og:image" content="https://xilidou.com/images/datepermission.png">
+<meta property="og:image" content="https://xilidou.com/images/jpa-filter.png">
+<meta property="article:published_time" content="2019-05-11T21:23:41.000Z">
+<meta property="article:modified_time" content="2022-01-11T05:08:45.728Z">
+<meta property="article:author" content="Zhengxin Diao">
+<meta property="article:tag" content="java">
+<meta property="article:tag" content="权限">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://xilidou.com/images/alex-pudov-588871-unsplash%202.jpg?x-oss-process=image/resize,p_40">
+
+
+<link rel="canonical" href="https://xilidou.com/2019/05/11/permisson/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh","comments":true,"permalink":"https://xilidou.com/2019/05/11/permisson/","path":"2019/05/11/permisson/","title":"如何利用 Spring Hibernate 高级特性设计实现一个权限系统"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>如何利用 Spring Hibernate 高级特性设计实现一个权限系统 | 犀利豆的博客</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?5d32532da741f4430197fd778ea752f1"></script>
+
+  <script async src="//assets.growingio.com/2.1/gio.js"></script>
+  <script class="next-config" data-name="growingio_analytics" type="application/json">"UA-35317601-2"</script>
+  <script src="/js/third-party/analytics/growingio.js"></script>
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="犀利豆的博客" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">犀利豆的博客</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">高质量的技术博客</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li>
+        <li class="menu-item menu-item-java"><a href="/tags/java/" rel="section"><i class="fa fa-th fa-fw"></i>java</a></li>
+        <li class="menu-item menu-item-redis"><a href="/tags/redis/" rel="section"><i class="fa fa-th fa-fw"></i>redis</a></li>
+        <li class="menu-item menu-item-dubbo"><a href="/tags/dubbo/" rel="section"><i class="fa fa-th fa-fw"></i>dubbo</a></li>
+        <li class="menu-item menu-item-tools"><a href="/tags/tools" rel="section"><i class="fa fa-th fa-fw"></i>tools</a></li>
+        <li class="menu-item menu-item-我的朋友们"><a href="/friends" rel="section"><i class="fa fa-user fa-fw"></i>我的朋友们</a></li>
+        <li class="menu-item menu-item-关于我"><a href="/aboutme" rel="section"><i class="fa fa-user fa-fw"></i>关于我</a></li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%83%8C%E6%99%AF"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%9C%80%E6%B1%82"><span class="nav-number">2.</span> <span class="nav-text">需求</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8A%9F%E8%83%BD%E6%9D%83%E9%99%90"><span class="nav-number">2.1.</span> <span class="nav-text">功能权限</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E6%9D%83%E9%99%90"><span class="nav-number">2.2.</span> <span class="nav-text">数据权限</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%9A%E5%8A%A1%E8%AE%BE%E8%AE%A1"><span class="nav-number">3.</span> <span class="nav-text">业务设计</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8A%9F%E8%83%BD%E6%9D%83%E9%99%90-1"><span class="nav-number">3.1.</span> <span class="nav-text">功能权限</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E6%9D%83%E9%99%90-1"><span class="nav-number">3.2.</span> <span class="nav-text">数据权限</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E7%8E%B0%E7%9A%84%E6%8A%80%E6%9C%AF%E9%9A%BE%E7%82%B9"><span class="nav-number">4.</span> <span class="nav-text">实现的技术难点</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Mysql-%E4%B8%AD%E6%A0%91%E7%9A%84%E5%82%A8%E5%AD%98"><span class="nav-number">4.1.</span> <span class="nav-text">Mysql 中树的储存</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BF%AB%E9%80%9F%E7%9A%84%E8%87%AA%E5%8A%A8%E7%9A%84%E8%8E%B7%E5%8F%96-API-%E4%BF%A1%E6%81%AF"><span class="nav-number">4.2.</span> <span class="nav-text">快速的自动的获取 API 信息</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8F%8F%E8%BF%B0%E4%B8%80%E4%B8%AA-API"><span class="nav-number">4.3.</span> <span class="nav-text">描述一个 API</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%94%A8%E6%88%B7%E7%9A%84%E6%9D%83%E9%99%90%E6%95%B0%E6%8D%AE"><span class="nav-number">4.4.</span> <span class="nav-text">用户的权限数据</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%A9%E7%94%A8-Spring-%E7%89%B9%E6%80%A7%E5%AE%9E%E7%8E%B0%E5%8A%9F%E8%83%BD%E6%9D%83%E9%99%90"><span class="nav-number">4.5.</span> <span class="nav-text">利用 Spring 特性实现功能权限</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%A9%E7%94%A8-Hibrenate-%E7%89%B9%E6%80%A7%E5%AE%9E%E7%8E%B0%E6%95%B0%E6%8D%AE%E6%9D%83%E9%99%90"><span class="nav-number">4.6.</span> <span class="nav-text">利用 Hibrenate 特性实现数据权限</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%98%93%E4%BA%8E%E6%8E%A5%E5%85%A5"><span class="nav-number">4.7.</span> <span class="nav-text">易于接入</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">5.</span> <span class="nav-text">总结</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Zhengxin Diao</p>
+  <div class="site-description" itemprop="description">北邮本科，University of Leicester EE 研究生，Java后端开发，目前就职阿里</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">43</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">73</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/diaozxin007" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;diaozxin007" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:diaozxin@163.com" title="E-Mail → mailto:diaozxin@163.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/diao-zheng-xin/activities" title="zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;diao-zheng-xin&#x2F;activities" rel="noopener" target="_blank"><i class="zhihu fa-fw"></i>zhihu</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml"><i class="rs fa-fw"></i>RSS</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://xilidou.com/2019/05/11/permisson/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Zhengxin Diao">
+      <meta itemprop="description" content="北邮本科，University of Leicester EE 研究生，Java后端开发，目前就职阿里">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="犀利豆的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          如何利用 Spring Hibernate 高级特性设计实现一个权限系统
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2019-05-11 21:23:41" itemprop="dateCreated datePublished" datetime="2019-05-11T21:23:41+00:00">2019-05-11</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2022-01-11 05:08:45" itemprop="dateModified" datetime="2022-01-11T05:08:45+00:00">2022-01-11</time>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p><img src="/images/alex-pudov-588871-unsplash%202.jpg?x-oss-process=image/resize,p_40" alt="keepout"></p>
+<p>我们的业务系统使用了一段时间后，用户的角色类型越来越多，这时候不同类型的用户可以使用不同功能，看见不同数据的需求就变得越来越迫切。<br>如何设计一个可扩展,且易于接入的权限系统.就显得相当重要了。结合之前我实现的的权限系统，今天就来和大家探讨一下我对权限系统的理解。</p>
+<p>这篇文章会从权限系统业务设计，技术架构，关键代码几个方面，详细的阐述权限系统的实现。</p>
+<span id="more"></span>
+
+<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>权限系统是一个系统的基础功能，但是作为创业公司，秉承着快比完美更重要原则，老系统的权限系统都是硬编码在代码或者写在到配置文件中的。随着业务的发展，如此简陋的权限系统就显得捉襟见肘了。开发一套新的，强大的权限系统就提上了日程。</p>
+<p>这里有两个重点：</p>
+<ul>
+<li>业务系统已经运行一段时间积累了可观的代码和接口了，新的权限系统权在设计之初的一个要求就是，尽量减少权限系统对原有业务代码的入侵。（为了达成这个目的，我们会大量的使用 spring、springboot、jpa  以及 hibernate  的高级特性）</li>
+<li>系统要易于使用，可以由业务方自行进行配置。</li>
+</ul>
+<h2 id="需求"><a href="#需求" class="headerlink" title="需求"></a>需求</h2><p>权限系统需要支持功能权限和数据权限。</p>
+<h3 id="功能权限"><a href="#功能权限" class="headerlink" title="功能权限"></a>功能权限</h3><p>所谓功能权限，就是指，拥有某种角色的用户，只能看到某些功能，并使用它。实现功能权限就简化为：</p>
+<ul>
+<li>页面元素如何根据不同用户进行渲染</li>
+<li>API 的访问权限如何根据不同的用户进行管理</li>
+</ul>
+<h3 id="数据权限"><a href="#数据权限" class="headerlink" title="数据权限"></a>数据权限</h3><p>所谓数据权限是指，数据是隔离的，用户能看到的数据，是经过控制的，用户只能看到拥有权限的某些数据。</p>
+<p>比如，某个地区的 leader 可以查看并操作这个地区的所有员工负责的订单数据，但是员工就只能操作和查看自己负责的的订单数据。</p>
+<p>对于数据权限，我们需要考虑的问题就抽象为，</p>
+<ol>
+<li>数据的归属问题：数据产生以后归属于谁？</li>
+<li>确定了数据的归属，根据某些配置，就能确定谁可以查看归属于谁的数据。</li>
+</ol>
+<h2 id="业务设计"><a href="#业务设计" class="headerlink" title="业务设计"></a>业务设计</h2><p>经过上面的分析，我们可以抽象出以下几个实体：</p>
+<h3 id="功能权限-1"><a href="#功能权限-1" class="headerlink" title="功能权限"></a>功能权限</h3><ul>
+<li>用户</li>
+<li>角色</li>
+<li>功能</li>
+<li>页面元素</li>
+<li>API 信息</li>
+</ul>
+<p>我们知道，对于一某个功能来说，它是由若干的前端元素和后端 API 组成的。</p>
+<p>比如“合同审核” 这个功能就包括了，“查看按钮”、“审核按钮” 等前端元素。</p>
+<p>涉及的 api 就可能包含了 <code>contract</code> 的 <code>get</code> 和 <code>patch</code> 两个 Restful 风格的接口。</p>
+<p>抽象出来就是：在权限系统中若干前端元素和后端 API 组成了一个功能。</p>
+<p>具体的关系，就是如下图：</p>
+<p><img src="/images/permissin-er.png" alt="permission-er"></p>
+<h3 id="数据权限-1"><a href="#数据权限-1" class="headerlink" title="数据权限"></a>数据权限</h3><p>具体每个系统的数据权限的实现有所不同，我们这里实现的数据权限是依赖于公司的组织架构实现的，所有涉及到的实体如下：</p>
+<ul>
+<li>用户</li>
+<li>数据权限关系</li>
+<li>部门</li>
+<li>数据拥有者</li>
+<li>具体数据（订单，合同）</li>
+</ul>
+<p>这里需要说明一下，要接入数据权限，首先需要梳理数据的归属问题，数据归属于谁？或者准确的来说，数据属于哪个数据拥有者，这个数据拥有者属于哪个部门。通过这个关联关系我们就可以明确，这个数据属于哪个部门。</p>
+<p>对于数据的使用用户，来说，就需要查询，这个用户可以查看某个模块的某个部门的数据。</p>
+<p>这里需要说明的是，不同的系统的数据权限需要具体分析，我们系统的数据权限是建立在公司的组织架构上的。</p>
+<p>本质就是：</p>
+<ul>
+<li>数据归属于某个数据拥有者</li>
+<li>用户能够看到该数据拥有者的数据</li>
+</ul>
+<p>具体的关系图如下：</p>
+<p><img src="/images/datepermission.png" alt="date-permission"></p>
+<p>注意，实际上用户和数据拥有者都是同一个实体 User 表示，只是为了表述方便进行了区分。</p>
+<h2 id="实现的技术难点"><a href="#实现的技术难点" class="headerlink" title="实现的技术难点"></a>实现的技术难点</h2><h3 id="Mysql-中树的储存"><a href="#Mysql-中树的储存" class="headerlink" title="Mysql 中树的储存"></a>Mysql 中树的储存</h3><p>可以看出来，我们的功能和组织架构都是典型的树形结构。</p>
+<p>我们最常见的场景如下</p>
+<ul>
+<li>查询某个功能，及其所有子功能。</li>
+<li>查询某个部门，及其所有子部门的所属员工。</li>
+</ul>
+<p>抽象以后就是查询树的某个节点，和他的所有子节点。</p>
+<p>为了便于查询，我们可以增加两个冗余字段，一个是 <code>parent_id</code> ,还有一个是 <code>path</code>。</p>
+<ul>
+<li>parent_id 很好理解，就是父节点的 id；</li>
+<li>path 指的是，这个节点，路径上的 id 的。使用’.’进行分隔的一个字符串。 比如</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">    A</span><br><span class="line">   / \</span><br><span class="line">  B   C</span><br><span class="line"> /\   /\</span><br><span class="line">D  E F  G</span><br><span class="line">        /\</span><br><span class="line">       H  I</span><br></pre></td></tr></table></figure>
+
+<p>对于 D 的 path 就是 <code>(A.id).(B.id).</code> 这要的好处的就是通过 <code>sql</code> 的 <code>like</code> 的语句就能快速的查询出某个节点的子节点。</p>
+<p>比如要获取节点 C 的所有子节点:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Select * from user where path like (A.id).(C.id).%</span><br></pre></td></tr></table></figure>
+
+<p>一次查询可以获取所有子节点，是一种查询友好的设计。如果需要我们可以为 <code>path</code> 字段增加索引，根据索引的左值定律，这样的 like 查询是可以走索引的。提升查询效率。</p>
+<h3 id="快速的自动的获取-API-信息"><a href="#快速的自动的获取-API-信息" class="headerlink" title="快速的自动的获取 API 信息"></a>快速的自动的获取 API 信息</h3><p>我们知道 <code>Spirng mvc</code> 在启动的时候会扫描被 <code>@RequestMapping</code> 注解标记的方法，并把数据放在 <code>RequestMappingHandlerMapping</code> 中。所以我们可以这样：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="meta">@Componet</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ApiScanSerivce</span></span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Autoired</span></span><br><span class="line">    <span class="keyword">private</span> RequestMappingHandlerMapping requestMapping;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@PostConstruct</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">update</span><span class="params">()</span></span>&#123;</span><br><span class="line"></span><br><span class="line">        Map&lt;RequestMappingInfo,HandlerMethed&gt; handlerMethods = requestMapping.getHandlerMethods();</span><br><span class="line">        <span class="keyword">for</span>(Map.Entry RequestMappinInfo,HandlerMethod) entry: handlerMethods.entrySet()&#123;</span><br><span class="line">            <span class="comment">// 处理 API 上传的相关逻辑</span></span><br><span class="line">            updateApiInfo();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>获取项目的所有 http 接口。这样我们就可以遍历处理项目的接口数据。</p>
+<h3 id="描述一个-API"><a href="#描述一个-API" class="headerlink" title="描述一个 API"></a>描述一个 API</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ApiInfo</span></span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> Long id;</span><br><span class="line">    <span class="keyword">private</span> String uri; <span class="comment">// api 的 uri</span></span><br><span class="line">    <span class="keyword">private</span> String method; <span class="comment">//请求的 method：eg： get、 post、 patch。</span></span><br><span class="line">    <span class="keyword">private</span> String project; <span class="comment">// 这组 api 属于哪一个 web 工程。</span></span><br><span class="line">    <span class="keyword">private</span> String signature; <span class="comment">//方法的签名</span></span><br><span class="line">    <span class="keyword">private</span> Intger status; <span class="comment">// api 状态</span></span><br><span class="line">    <span class="keyword">private</span> Intger whiteList; <span class="comment">// 是否是白名单 api 如果是就不需过滤</span></span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>其中方法的签名生成的算法伪代码:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">signature = className + <span class="string">&quot;#&quot;</span> + methodName +<span class="string">&quot;(&quot;</span> + parameterTypeList+<span class="string">&quot;)&quot;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="用户的权限数据"><a href="#用户的权限数据" class="headerlink" title="用户的权限数据"></a>用户的权限数据</h3><p>首先我们定义的用户权限数据如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Data</span></span><br><span class="line"><span class="meta">@ToString</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">UserPermisson</span></span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//用户可以看到的前端元素的列表</span></span><br><span class="line">    <span class="keyword">private</span> List&lt;Long&gt; pageElementIdList;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//用户可以使用的 API 列表</span></span><br><span class="line">    <span class="keyword">private</span> List&lt;String&gt; apiSignatureList;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//用户不同模块的数据权限 的 map。map 的 key 是模块名称，value 是这个能够看到数据属于那些用户的列表</span></span><br><span class="line">    <span class="keyword">private</span> Map&lt;String,List&lt;Long&gt;&gt; dataAccessMap；</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="利用-Spring-特性实现功能权限"><a href="#利用-Spring-特性实现功能权限" class="headerlink" title="利用 Spring 特性实现功能权限"></a>利用 Spring 特性实现功能权限</h3><p>对于如何使用 Spring 实现方法拦截，很自然的就像到了使用拦截器来实现。考虑到我们这个权限的组件是一个通用组件，所以就可以写一个抽象类，暴露出<code>getUid(HttpServletRequest requset)</code> 用户获取使用系统的 <code>userId</code>,以及 <code>onPermission(String msg)</code>留给业务方自己实现，没有权限以后的动作。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">PermissonAbstractInterceptor</span> <span class="keyword">extends</span> <span class="title">HandlerInterceptorAdapter</span></span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> abstarct <span class="keyword">long</span> <span class="title">getUid</span><span class="params">(HttpServletRequest requset)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">abstract</span> <span class="title">onPermession</span><span class="params">(String str)</span> <span class="keyword">throws</span> Exception</span>;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">preHandler</span><span class="params">(HttpServletRequest request,HttoServletResponse respponse,Object handler)</span> <span class="keyword">throws</span> Excption</span>&#123;</span><br><span class="line">        <span class="comment">// 获取用户的 uid</span></span><br><span class="line">        <span class="keyword">long</span> uid = getUid(request);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 根据用户 获取用户相关的 权限对象</span></span><br><span class="line">        UserPermisson userPermission = getUserPermissonByUid(uid);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span>(inandler <span class="keyword">instanceof</span> HanderMethod)&#123;</span><br><span class="line">            <span class="comment">//获取请求方的签名</span></span><br><span class="line">            String methodSignerture = getMethodSignerture(handler);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span>(!userPermisson.getApiSignatureList().contains(methodSignerture))&#123;</span><br><span class="line"></span><br><span class="line">                onPermession(<span class="string">&quot;该用户没有权限&quot;</span>);</span><br><span class="line"></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>以上的代码只是提供一个思路。不是真实的代码实现。</p>
+<p>所以接入方就只需要继承这个抽象方法，并实现对应的方法，如果你使用的是 Springboot 的，只需要把实现的拦截器注册到拦截器里面就可以使用了：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MyWebAppConfigurer</span> <span class="keyword">extends</span> <span class="title">WebMvcConfigurerAdapter</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">addInterceptors</span><span class="params">(InterceptorRegistry registry)</span> </span>&#123;</span><br><span class="line">        registry.addInterceptor(permissionInterceptor);</span><br><span class="line">        <span class="keyword">super</span>.addInterceptors(registry);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="利用-Hibrenate-特性实现数据权限"><a href="#利用-Hibrenate-特性实现数据权限" class="headerlink" title="利用 Hibrenate 特性实现数据权限"></a>利用 Hibrenate 特性实现数据权限</h3><p>通过上面的代码可以看出来，功能权限的实现，基本做到了没有侵入代码。对于数据权限的实现的原则还是尽量少的减少代码的入侵。</p>
+<p>我们默认代码使用 Java 经典的 Controller、Service、Dao 三层架构。 主要使用的技术 Spring Aop、Jpa 的 filter，基本的实现思路如下图：</p>
+<p><img src="/images/jpa-filter.png" alt="date permission"></p>
+<p>基本的思路如下：</p>
+<ol>
+<li>用户登录以后，获取用户的数据权限相关信息。</li>
+<li>把相关信息权限系统放入 ThreadLocal 中。</li>
+<li>在 Dao 层中，从 ThreadLocal 中获取权限相关的权限数据。</li>
+<li>在 filter 中填充权限相关数据。</li>
+<li>从 Hibernate 上下文中取出 Session。</li>
+<li>在 Session 上添加相关 filter。</li>
+</ol>
+<p>通过图片我们可以看出，我们基本不需要对 Controller、Service、Dao 进行修改，只需要按需实现对应模块的 filter。</p>
+<p>看到这里你可能觉得”嚯~~”,还有这种操作？我们就看看代码是怎么具体实现的吧。</p>
+<ol>
+<li>首先需要在 Entity 上写一个 Filter,假设我们写的是订单模块。</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Entity</span></span><br><span class="line"><span class="meta">@Table(name = &quot;order&quot;)</span></span><br><span class="line"><span class="meta">@Data</span></span><br><span class="line"><span class="meta">@ToString</span></span><br><span class="line"><span class="meta">@FilterDef(name = &quot;orderOwnerFilter&quot;, parameters = &#123;@ParamDef name= &quot;ownerIds&quot;,type = &quot;long&quot;&#125;)</span></span><br><span class="line"><span class="meta">@Filters(&#123;@Filter name= &quot;orderOwnerFiler&quot;, condition = &quot;ownder in (:ownerIds)&quot;&#125;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">order</span></span>&#123;</span><br><span class="line">    <span class="keyword">private</span> Long id;</span><br><span class="line">    <span class="keyword">private</span> Long ownerId;</span><br><span class="line">    <span class="comment">//其他参数省略</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li>写个注解</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Retention(RetentinPolicy.RUNTIME)</span></span><br><span class="line"><span class="meta">@Taget(ElementType.METHOD)</span></span><br><span class="line"><span class="keyword">public</span> <span class="meta">@interface</span> OrderFilter&#123;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ol start="3">
+<li>编写一个切面用于处理 Session、datePermission、和 Filter</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="meta">@Aspect</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">OrderFilterAdvice</span></span>&#123;</span><br><span class="line">    <span class="meta">@PersistenceContext</span></span><br><span class="line">    <span class="keyword">private</span> EntityManager entityManager;</span><br><span class="line">    <span class="meta">@Around(&quot;annotation(OrderFilter)&quot;)</span></span><br><span class="line">    <span class="function">pblict Object <span class="title">doProcess</span> <span class="params">(ProceedingJoinPoint joinPonit)</span> <span class="keyword">throws</span> ThrowableP</span>&#123;</span><br><span class="line">        <span class="keyword">try</span>&#123;</span><br><span class="line">            <span class="comment">//从上下文里面获取 owerId，这个 Id 在 web 中就已经存好了</span></span><br><span class="line">            List&lt;Long&gt; ownerIds = getListFromThreadLocal();</span><br><span class="line">            <span class="comment">//获取查询中的 session</span></span><br><span class="line">            Session session = entityManager.unwrap(Session.class);</span><br><span class="line">            <span class="comment">// 在 session 中加入 filter</span></span><br><span class="line">            Filter filter = unwrap.enableFilter(<span class="string">&quot;orderOwnerFilter&quot;</span>);</span><br><span class="line">            <span class="comment">// filter 中加入数据</span></span><br><span class="line">            filter.setParameterList(<span class="string">&quot;ownerIds&quot;</span>，ownerIds)</span><br><span class="line">            <span class="comment">//执行 被拦截的方法</span></span><br><span class="line">            <span class="keyword">return</span> join.proceed();</span><br><span class="line">        &#125;<span class="keyword">catch</span>(Throwable e)&#123;</span><br><span class="line">            log.error();</span><br><span class="line">        &#125;<span class="keyword">finally</span>&#123;</span><br><span class="line">            <span class="comment">// 最后 disable filter</span></span><br><span class="line">           entityManager.unwrap(Session.class).disbaleFilter(<span class="string">&quot;orderOwnerFilter&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<pre><code>这个拦截器，拦截被打了 `@OrderFilter` 的方法。
+</code></pre>
+<h3 id="易于接入"><a href="#易于接入" class="headerlink" title="易于接入"></a>易于接入</h3><p>为了方便接入项目，我们可以将涉及到的整套代码封装为一个 <code>springboot-starter</code> 这样使用者只需要引入对应的 starter 就能够接入权限系统。  </p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>权限系统随着业务的发展，是从可以没有逐渐变成为非常重要的模块。往往需要接入权限系统的时候，系统已经成熟的运行了一段时间了。大量的接口，负责的业务，为权限系统的接入提高了难度。同时权限系统又是看似通用，但是定制的点又不少的系统。</p>
+<p>设计套权限系统的初衷就是，不需要大量修改代码，业务方就可方便简单的接入。<br>具体实现代码的时候，我们充分利用了面向切面的编程思想。同时大量的使用了 <code>Spring</code>、<code>Hibrenate</code>框架的高级特性，保证的代码的灵活，以及横向扩展的能力。</p>
+<p>看完文章如果你发现有疑问，或者更好的实现方法，欢迎留言与我讨论。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/java/" rel="tag"># java</a>
+              <a href="/tags/%E6%9D%83%E9%99%90/" rel="tag"># 权限</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2019/05/07/wx-bot/" rel="prev" title="居然有人能忘记吃饭？写个微信机器人提醒他">
+                  <i class="fa fa-chevron-left"></i> 居然有人能忘记吃饭？写个微信机器人提醒他
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2019/08/13/zhihu/" rel="next" title="从需求第三定律说起--为什么知乎的回答质量下降了">
+                  从需求第三定律说起--为什么知乎的回答质量下降了 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="noopener" target="_blank">京ICP备17065467号-1 </a>
+  </div>
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Zhengxin Diao</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.5.0/pjax.min.js" integrity="sha256-3NkoLDrmHLTYj7csHIZSr0MHAFTXth7Ua/DDt4MRUAg=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script><script src="/js/pjax.js"></script>
+
+  
+
+
+
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+</body>
+</html>
